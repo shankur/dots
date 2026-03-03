@@ -1,5 +1,26 @@
 export PATH=$PATH:$HOME/.local/bin
 
+# Initialize completion system first
+autoload -Uz compinit
+compinit
+
+# Configure completion system
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%B%d%b'
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:match:*' original only
+zstyle ':completion:*:approximate:*' max-errors 1 numeric
+
+# Enable completion caching
+zstyle ':completion:*' use-cache yes
+zstyle ':completion:*' cache-path ~/.zsh/cache
+
+# Add cargo to PATH for Sheldon
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # Bottom-up prompt setup
 # Add some space to push prompt towards bottom
 export PROMPT_EOL_MARK=""
@@ -41,14 +62,37 @@ run_split() {
     fi
 }
 
+# zplug Plugin Manager
+export ZPLUG_HOME=/opt/homebrew/opt/zplug
+source $ZPLUG_HOME/init.zsh
+
+# Essential plugins
+zplug "zsh-users/zsh-autosuggestions", from:github
+zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:2
+zplug "zsh-users/zsh-completions", from:github
+
+# Additional plugins
+zplug "Aloxaf/fzf-tab", from:github
+zplug "zsh-users/zsh-history-substring-search", from:github
+
+# Install and load plugins
+if ! zplug check; then
+    zplug install
+fi
+zplug load
+
+# Ensure TAB completion works properly
+bindkey '^I' expand-or-complete
+bindkey '^[[Z' reverse-menu-complete
+
 # Zoxide - Smart directory jumping
 eval "$(zoxide init zsh)"
 
 # Git-extras completions
 source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
 
-# Starship Prompt
-eval "$(starship init zsh)"
+# fzf - Fuzzy finder shell integration
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-# Sheldon Plugin Manager
-eval "$(sheldon source)"
+# Starship Prompt (load last)
+eval "$(starship init zsh)"
