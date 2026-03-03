@@ -1,0 +1,23 @@
+# Ghostty Configuration
+# For bottom-up prompt behavior
+
+# Terminal behavior
+cursor-style = block
+cursor-style-blink = false
+
+# Scrollback and display
+scrollback-limit = 10000
+
+# Window behavior
+window-padding-x = 8
+window-padding-y = 8
+
+# Font settings (optional - adjust to your preference)
+# font-family = "JetBrains Mono"
+# font-size = 14
+
+# Theme (to match your Catppuccin setup)
+theme = dark
+
+# For bottom-up behavior, we'll use a shell-level solution
+# This config prepares the terminal for optimal display

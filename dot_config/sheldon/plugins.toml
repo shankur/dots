@@ -1,0 +1,71 @@
+# Sheldon Plugin Configuration
+# This file tracks all zsh plugins managed by Sheldon
+
+shell = "zsh"
+
+[templates]
+defer = "{{ hooks?.pre | nl }}{% for file in files %}zsh-defer source \"{{ file }}\"\n{% endfor %}{{ hooks?.post | nl }}"
+
+# ============================================================================
+# CORE PLUGINS - Essential zsh functionality
+# ============================================================================
+
+
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+proto = "https"
+# Fish-like fast/unobtrusive autosuggestions for zsh
+
+[plugins.zsh-syntax-highlighting]
+github = "zsh-users/zsh-syntax-highlighting"
+proto = "https"
+# Fish shell-like syntax highlighting for zsh
+# Note: Must be loaded after other plugins that bind widgets
+
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+proto = "https"
+# Additional completion definitions for zsh
+
+# ============================================================================
+# PRODUCTIVITY PLUGINS - Tools and utilities
+# ============================================================================
+
+[plugins.fzf]
+github = "junegunn/fzf"
+proto = "https"
+dir = "shell"
+# Fuzzy finder for command line
+
+
+[plugins.fzf-tab]
+github = "Aloxaf/fzf-tab"
+proto = "https"
+# Replace tab completion with fzf fuzzy finder
+
+[plugins.zsh-abbr]
+github = "olets/zsh-abbr"
+proto = "https"
+# Fish-like abbreviations that expand as you type
+
+[plugins.history-substring-search]
+github = "zsh-users/zsh-history-substring-search"
+proto = "https"
+# Search history with up/down arrows
+
+[plugins.git-open]
+github = "paulirish/git-open"
+proto = "https"
+# Open GitHub/GitLab repo in browser with git open
+
+[plugins.you-should-use]
+github = "MichaelAquilina/zsh-you-should-use"
+proto = "https"
+# Reminds you to use existing aliases
+
+# ============================================================================
+# PLUGIN INSTALLATION LOG
+# ============================================================================
+# Installation Date: 2026-03-01
+# Installed via: cargo install sheldon
+# Last Updated: 2026-03-01

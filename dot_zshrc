@@ -1,0 +1,54 @@
+export PATH=$PATH:$HOME/.local/bin
+
+# Bottom-up prompt setup
+# Add some space to push prompt towards bottom
+export PROMPT_EOL_MARK=""
+
+# Function to add padding and keep prompt at bottom
+bottom_up_padding() {
+    local terminal_height=$(tput lines)
+    local content_height=10  # Adjust based on your preference
+    local padding=$((terminal_height - content_height))
+
+    if [ $padding -gt 0 ]; then
+        printf '\n%.0s' $(seq 1 $padding)
+    fi
+}
+
+# Alternative: Manual bottom-up command
+alias bottom='clear; printf "\n%.0s" $(seq 1 $(($(tput lines) - 5)))'
+
+# Function to start a bottom-up session
+start_bottom_up() {
+    clear
+    printf '\n%.0s' $(seq 1 $(($(tput lines) - 10)))
+    echo "🚀 Bottom-up mode activated! Type 'bottom' to reset position."
+}
+
+# Split-screen prompt sessions
+alias split='split-prompt'
+alias sp='split-prompt'
+alias asplit='advanced-split'
+alias as='advanced-split'
+
+# Function to run command and display output in top pane
+run_split() {
+    if [[ -n $TMUX ]]; then
+        # Run command and send output to top pane
+        eval "$@" | tmux send-keys -t 0 "$(cat)" Enter
+    else
+        echo "❌ Not in tmux session. Run 'split' first."
+    fi
+}
+
+# Zoxide - Smart directory jumping
+eval "$(zoxide init zsh)"
+
+# Git-extras completions
+source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
+
+# Starship Prompt
+eval "$(starship init zsh)"
+
+# Sheldon Plugin Manager
+eval "$(sheldon source)"

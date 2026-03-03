@@ -1,0 +1,99 @@
+#!/bin/bash
+# Bootstrap script for setting up development environment
+# This runs once when chezmoi applies configurations
+
+echo "🚀 Setting up development environment..."
+
+# Detect OS
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS setup
+    echo "📱 Detected macOS"
+
+    # Install Homebrew if not present
+    if ! command -v brew &> /dev/null; then
+        echo "📦 Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+
+    # Install essential packages
+    echo "📦 Installing essential packages..."
+    brew install \
+        git \
+        neovim \
+        tmux \
+        go \
+        rust \
+        node \
+        python3 \
+        fzf \
+        git-extras \
+        starship \
+        zoxide \
+        delta
+
+    # Install Sheldon (zsh plugin manager) via cargo
+    echo "🔌 Installing Sheldon..."
+    if command -v cargo &> /dev/null; then
+        cargo install sheldon
+    fi
+
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux setup
+    echo "🐧 Detected Linux"
+
+    # Detect package manager and install essentials
+    if command -v apt &> /dev/null; then
+        sudo apt update
+        sudo apt install -y \
+            git \
+            neovim \
+            tmux \
+            golang-go \
+            nodejs \
+            npm \
+            python3 \
+            python3-pip \
+            build-essential \
+            curl \
+            wget \
+            fzf
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y \
+            git \
+            neovim \
+            tmux \
+            golang \
+            nodejs \
+            npm \
+            python3 \
+            python3-pip \
+            gcc \
+            curl \
+            wget \
+            fzf
+    fi
+
+    # Install Rust
+    if ! command -v cargo &> /dev/null; then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
+    fi
+fi
+
+# Install Claude CLI (if needed)
+echo "🤖 Setting up Claude CLI..."
+# Note: User should manually install Claude CLI as it requires authentication
+
+# Setup Neovim
+echo "📝 Setting up Neovim..."
+# AstroNvim will be restored from dotfiles
+
+# Final message
+echo "✅ Dependencies installed!"
+echo "🔄 Please restart your shell or run: source ~/.zshrc"
+echo "🤖 Remember to authenticate Claude CLI manually"
+echo ""
+echo "📋 Next steps:"
+echo "  1. Restart your shell"
+echo "  2. Run 'nvim' to complete AstroNvim setup"
+echo "  3. Authenticate Claude CLI if needed"

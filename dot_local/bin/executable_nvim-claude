@@ -1,0 +1,14 @@
+#!/bin/bash
+# Simple Neovim control interface for Claude
+# Usage: nvim-claude <command> [args]
+
+CONTROL_SCRIPT="$HOME/.config/nvim/claude-control/claude-nvim"
+
+# Check if Neovim control script exists
+if [ ! -f "$CONTROL_SCRIPT" ]; then
+    echo "❌ Neovim control system not initialized. Please start Neovim first."
+    exit 1
+fi
+
+# Execute the command
+"$CONTROL_SCRIPT" "$@"

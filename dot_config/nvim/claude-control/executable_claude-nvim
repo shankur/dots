@@ -1,0 +1,71 @@
+#!/bin/bash
+# Claude Neovim Control Script
+
+CONTROL_DIR="$HOME/.config/nvim/claude-control"
+SOCK_FILE="$CONTROL_DIR/nvim.sock"
+
+case "$1" in
+  "list-buffers")
+    nvim --server "$SOCK_FILE" --remote-expr "luaeval('require(\"claude-remote\").list_buffers()')" 2>/dev/null || echo "Neovim not accessible"
+    ;;
+  "open-file")
+    if [ -z "$2" ]; then
+      echo "Usage: claude-nvim open-file <filename>"
+      exit 1
+    fi
+    nvim --server "$SOCK_FILE" --remote "$2" 2>/dev/null && echo "Opened: $2" || echo "Failed to open: $2"
+    ;;
+  "close-buffer")
+    nvim --server "$SOCK_FILE" --remote-send ":bdelete<CR>" 2>/dev/null && echo "Buffer closed" || echo "Failed to close buffer"
+    ;;
+  "read-current")
+    nvim --server "$SOCK_FILE" --remote-expr "luaeval('require(\"claude-remote\").read_current_buffer()')" 2>/dev/null || echo "Cannot read buffer"
+    ;;
+  "read-buffer")
+    if [ -z "$2" ]; then
+      echo "Usage: claude-nvim read-buffer <number|name>"
+      exit 1
+    fi
+    nvim --server "$SOCK_FILE" --remote-expr "luaeval('require(\"claude-remote\").read_buffer(\"$2\")')" 2>/dev/null || echo "Cannot read buffer: $2"
+    ;;
+  "switch-buffer")
+    if [ -z "$2" ]; then
+      echo "Usage: claude-nvim switch-buffer <number>"
+      exit 1
+    fi
+    nvim --server "$SOCK_FILE" --remote-send ":buffer $2<CR>" 2>/dev/null && echo "Switched to buffer: $2" || echo "Failed to switch"
+    ;;
+  "save-buffer")
+    nvim --server "$SOCK_FILE" --remote-send ":write<CR>" 2>/dev/null && echo "Buffer saved" || echo "Failed to save"
+    ;;
+  "highlight-lines")
+    if [ -z "$2" ] || [ -z "$3" ]; then
+      echo "Usage: claude-nvim highlight-lines <buffer> <start_line> [end_line] [style]"
+      echo "Styles: default, error, warning, info, success, todo, focus, note"
+      exit 1
+    fi
+    buffer="$2"
+    start_line="$3"
+    end_line="${4:-$3}"
+    style="${5:-default}"
+    nvim --server "$SOCK_FILE" --remote-expr "luaeval('require(\"claude-remote\").highlight_lines(\"$buffer\", \"$start_line\", \"$end_line\", \"$style\")')" 2>/dev/null || echo "Cannot highlight lines"
+    ;;
+  "clear-highlights")
+    buffer="${2:-current}"
+    nvim --server "$SOCK_FILE" --remote-expr "luaeval('require(\"claude-remote\").clear_highlights(\"$buffer\")')" 2>/dev/null || echo "Cannot clear highlights"
+    ;;
+  *)
+    echo "Claude Neovim Control Commands:"
+    echo "  list-buffers         - List all open buffers"
+    echo "  open-file <file>     - Open file in new buffer"
+    echo "  close-buffer         - Close current buffer"
+    echo "  read-current         - Read current buffer content"
+    echo "  read-buffer <n>      - Read specific buffer (by number or name)"
+    echo "  switch-buffer <n>    - Switch to buffer number"
+    echo "  save-buffer          - Save current buffer"
+    echo "  highlight-lines <buf> <start> [end] [style] - Highlight lines"
+    echo "  clear-highlights [buf] - Clear highlights (buf or 'all')"
+    echo ""
+    echo "Highlight Styles: default, error, warning, info, success, todo, focus, note"
+    ;;
+esac
