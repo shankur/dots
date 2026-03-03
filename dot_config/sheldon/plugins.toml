@@ -31,17 +31,17 @@ proto = "https"
 # PRODUCTIVITY PLUGINS - Tools and utilities
 # ============================================================================
 
-[plugins.fzf]
-github = "junegunn/fzf"
-proto = "https"
-dir = "shell"
-# Fuzzy finder for command line
+# [plugins.fzf]
+# github = "junegunn/fzf"
+# proto = "https"
+# dir = "shell"
+# Fuzzy finder for command line (disabled - using homebrew version instead)
 
 
-[plugins.fzf-tab]
-github = "Aloxaf/fzf-tab"
-proto = "https"
-# Replace tab completion with fzf fuzzy finder
+# [plugins.fzf-tab]
+# github = "Aloxaf/fzf-tab"
+# proto = "https"
+# Replace tab completion with fzf fuzzy finder (disabled - causing startup issues)
 
 [plugins.zsh-abbr]
 github = "olets/zsh-abbr"
