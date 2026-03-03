@@ -17,7 +17,10 @@ window-padding-y = 8
 # font-size = 14
 
 # Theme (to match your Catppuccin setup)
-theme = dark
+theme = catppuccin-mocha
+
+# Key bindings - ensure TAB works for completion
+keybind = tab=text:\t
 
 # For bottom-up behavior, we'll use a shell-level solution
 # This config prepares the terminal for optimal display
