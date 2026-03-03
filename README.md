@@ -4,7 +4,7 @@ This repository contains my dotfiles and development environment setup, managed 
 
 ## 🛠️ What's Included
 
-- **Zsh Configuration** - with Sheldon plugin manager
+- **Zsh Configuration** - with zplug plugin manager
 - **Tmux Configuration** - with Catppuccin Mocha theme
 - **Neovim Configuration** - AstroNvim with custom Claude integration
 - **Claude Integration** - Remote control scripts for Neovim
@@ -46,7 +46,7 @@ The setup script will automatically install:
 - fzf, git-extras, starship, zoxide
 
 ### Plugin Managers
-- Sheldon (zsh plugins)
+- zplug (zsh plugins)
 - Lazy.nvim (Neovim plugins - via AstroNvim)
 
 ### Manual Setup Required
@@ -57,7 +57,7 @@ The setup script will automatically install:
 
 ### Zsh Setup
 - Starship prompt with Catppuccin Mocha
-- Essential productivity plugins via Sheldon
+- Essential productivity plugins via zplug
 - Smart directory jumping with zoxide
 - Git integration and aliases
 
@@ -126,10 +126,13 @@ rm -rf ~/.local/share/nvim
 nvim  # Will reinstall plugins
 ```
 
-### Sheldon Issues
+### zplug Issues
 ```bash
 # Reinstall plugins
-sheldon lock --update
+zplug install
+
+# Update plugins
+zplug update
 ```
 
 ### Claude Integration Issues
