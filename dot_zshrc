@@ -72,24 +72,19 @@ run_split() {
     fi
 }
 
-# zplug Plugin Manager
-export ZPLUG_HOME=/opt/homebrew/opt/zplug
-source $ZPLUG_HOME/init.zsh
+# Basic completion setup (bypassing zplug for now)
+# Force completion rebuild
+autoload -Uz compinit
+compinit -f
 
-# Essential plugins
-zplug "zsh-users/zsh-autosuggestions", from:github
-zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:2
-zplug "zsh-users/zsh-completions", from:github
-
-# Additional plugins
-zplug "Aloxaf/fzf-tab", from:github
-zplug "zsh-users/zsh-history-substring-search", from:github
-
-# Install and load plugins
-if ! zplug check; then
-    zplug install
+# Basic autosuggestions and syntax highlighting (if available)
+if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
-zplug load
+
+if [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
 
 # Ensure TAB completion works properly
 bindkey '^I' expand-or-complete
