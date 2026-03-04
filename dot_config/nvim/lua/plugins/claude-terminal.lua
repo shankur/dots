@@ -16,6 +16,8 @@ return {
             vim.schedule(function()
               vim.bo.buflisted = false
               vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
+              -- Set a distinctive name for the Claude buffer
+              vim.api.nvim_buf_set_name(0, "Claude Chat")
             end)
           end,
           desc = "Open Claude Chat Terminal (right 35%)",
@@ -32,6 +34,8 @@ return {
               vim.schedule(function()
                 vim.bo.buflisted = false
                 vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
+                -- Set a distinctive name for the Claude buffer
+                vim.api.nvim_buf_set_name(0, "Claude Chat")
               end)
             end
           end,
@@ -108,6 +112,8 @@ return {
               vim.schedule(function()
                 vim.bo.buflisted = false
                 vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
+                -- Set a distinctive name for the Claude buffer
+                vim.api.nvim_buf_set_name(0, "Claude Chat")
               end)
             end
           end,
