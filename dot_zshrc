@@ -62,8 +62,14 @@ find() { fd "$@" }
 grep() { rg "$@" }
 alias cd='z'  # zoxide smart cd (alias works fine for cd)
 
-# Set up completion for our functions
-compdef '_files' ls ll la lt l. find grep
+# Set up completion for our functions - only files and directories
+_eza_completion() { _files }
+_fd_completion() { _files }
+_rg_completion() { _files }
+
+compdef _eza_completion ls ll la lt l.
+compdef _fd_completion find
+compdef _rg_completion grep
 
 # Function to run command and display output in top pane
 run_split() {
