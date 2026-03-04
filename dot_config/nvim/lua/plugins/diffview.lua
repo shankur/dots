@@ -1,8 +1,7 @@
 -- Enhanced Git diff viewing with diffview.nvim (with comment system)
 return {
   {
-    dir = vim.fn.expand("~/Desktop/diffview-comments"),  -- Use our local fork
-    name = "diffview.nvim",
+    "shankur/diffview-comments.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     cmd = {
       "DiffviewOpen",
