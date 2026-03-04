@@ -52,6 +52,25 @@ alias sp='split-prompt'
 alias asplit='advanced-split'
 alias as='advanced-split'
 
+# Editor shortcuts
+alias n='nvim'
+alias v='nvim'
+alias vim='nvim'
+
+# Tmux shortcuts
+alias t='tmux'
+alias ta='tmux attach-session'
+alias tat='tmux attach-session -t'
+alias tls='tmux list-sessions'
+alias tn='tmux new-session'
+alias tns='tmux new-session -s'
+alias tk='tmux kill-session'
+alias tks='tmux kill-session -t'
+alias td='tmux detach'
+alias ts='tmux switch-client -t'
+alias tw='tmux list-windows'
+alias tp='tmux list-panes'
+
 # Modern CLI Tools - Using functions instead of aliases for better completion
 ls() { eza --color=always --group-directories-first --icons "$@" }
 ll() { eza -l --color=always --group-directories-first --icons "$@" }

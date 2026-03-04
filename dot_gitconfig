@@ -1,0 +1,293 @@
+# Git Configuration
+# ~/.gitconfig
+
+[user]
+    name = "Ankur Sharma"
+    email = "inbox.ankur@pm.me"
+
+[core]
+    # Use Neovim as default editor
+    editor = nvim
+    
+    # Use bat as default pager
+    pager = bat --style=plain --color=always
+    
+    # Treat spaces before tabs and all kinds of trailing whitespace as an error
+    whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+    
+    # Make `git rebase` safer on macOS
+    trustctime = false
+    
+    # Speed up commands involving untracked files
+    preloadindex = true
+    
+    # Enable parallel I/O for operations like `git diff`
+    precomposeunicode = false
+
+[init]
+    # Use 'main' as default branch name
+    defaultBranch = main
+
+[branch]
+    # Show most recently changed branches first
+    sort = -committerdate
+    
+    # Automatically set up tracking when creating new branches
+    autosetupmerge = always
+    autosetuprebase = always
+
+[push]
+    # Automatically set upstream when pushing new branches
+    autoSetupRemote = true
+    
+    # Only push current branch
+    default = simple
+    
+    # Push tags along with commits
+    followTags = true
+
+[pull]
+    # Use merge instead of rebase for pulls
+    rebase = false
+    
+    # Only allow fast-forward merges
+    ff = only
+
+[merge]
+    # Include summaries of merged commits in merge commit messages
+    log = true
+    
+    # Use vimdiff-style merging
+    tool = vimdiff
+    
+    # Automatically resolve merge conflicts when possible
+    conflictstyle = diff3
+
+[rebase]
+    # Automatically stash and unstash when rebasing
+    autoStash = true
+    
+    # Use abbreviations in rebase todo list
+    abbreviateCommands = true
+
+[fetch]
+    # Remove any remote-tracking references that no longer exist
+    prune = true
+    
+    # Fetch tags along with commits
+    tags = true
+
+[status]
+    # Show individual files in untracked directories
+    showUntrackedFiles = all
+    
+    # Display submodule summary
+    submoduleSummary = true
+
+[color]
+    # Enable colors in Git output
+    ui = auto
+    branch = auto
+    diff = auto
+    interactive = auto
+    status = auto
+
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red
+    new = green
+    whitespace = red reverse
+
+[color "status"]
+    added = yellow
+    changed = green
+    untracked = cyan
+
+[diff]
+    # Detect copies as well as renames
+    renames = copies
+    
+    # Use better algorithm for diffs
+    algorithm = patience
+    
+    # Show submodule changes in diff
+    submodule = log
+
+[log]
+    # Use abbreviated SHA-1 hashes
+    abbrevCommit = true
+    
+    # Show dates in relative format
+    date = relative
+
+# Pager settings with bat integration
+[pager]
+    diff = bat --style=plain --color=always
+    log = bat --style=plain --color=always
+    show = bat --style=plain --color=always
+    blame = bat --style=plain --color=always
+
+# Useful aliases
+[alias]
+    # Short status
+    st = status -s
+    
+    # Checkout shorthand
+    co = checkout
+    cob = checkout -b
+    
+    # Branch shortcuts
+    br = branch
+    brd = branch -d
+    brD = branch -D
+    
+    # Commit shortcuts
+    ci = commit
+    cm = commit -m
+    ca = commit -a
+    cam = commit -am
+    
+    # Amend commits
+    amend = commit --amend
+    amendne = commit --amend --no-edit
+    
+    # Add shortcuts
+    aa = add --all
+    ap = add --patch
+    
+    # Diff shortcuts
+    df = diff
+    dfc = diff --cached
+    dfh = diff HEAD
+    
+    # Log shortcuts
+    lg = log --color=always --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+    lol = log --graph --decorate --pretty=oneline --abbrev-commit
+    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+    
+    # Show last commit
+    last = log -1 HEAD --stat
+    
+    # Show what I did today  
+    today = log --since='1 Day Ago' --oneline --author="inbox.ankur@pm.me"
+    
+    # Show what I did this week
+    week = log --since='1 Week Ago' --oneline --author="inbox.ankur@pm.me"
+    
+    # Machine-specific aliases
+    # Personal project shortcuts  
+    side = log --oneline --all --author="inbox.ankur@pm.me"
+    
+    # Stash shortcuts
+    sl = stash list
+    sa = stash apply
+    ss = stash save
+    sp = stash pop
+    
+    # Reset shortcuts
+    unstage = reset HEAD --
+    uncommit = reset --soft HEAD^
+    
+    # Remote shortcuts
+    rb = rebase
+    rbc = rebase --continue
+    rba = rebase --abort
+    
+    # Push/pull shortcuts
+    ps = push
+    pl = pull
+    pf = push --force-with-lease
+    
+    # Sync with upstream
+    sync = !git checkout main && git pull upstream main && git push origin main
+    
+    # Clean up merged branches
+    cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d"
+    
+    # Show contributors
+    contributors = shortlog --summary --numbered
+    
+    # Find commits by commit message
+    find = "!git log --pretty=\"format:%Cgreen%H %Cblue%s\" --name-status --grep"
+    
+    # Find files by name
+    findf = "!git ls-files | grep -i"
+    
+    # Show current branch
+    current = symbolic-ref --short HEAD
+    
+    # List all aliases
+    aliases = config --get-regexp alias
+    
+    # Undo last commit but keep changes
+    undo = reset HEAD~1 --mixed
+    
+    # Show remote URLs
+    remotes = remote -v
+    
+    # Tag shortcuts
+    tags = tag -l
+    
+    # Archive branch
+    archive = "!f() { git tag archive/$1 $1 && git branch -d $1; }; f"
+    
+    # Restore archived branch
+    unarchive = "!f() { git checkout -b $1 archive/$1 && git tag -d archive/$1; }; f"
+
+# URL shortcuts for common Git hosting services
+[url "git@github.com:"]
+	insteadof = https://github.com/
+    
+[url "git@gitlab.com:"]
+    insteadOf = https://gitlab.com/
+    
+[url "git@bitbucket.org:"]
+    insteadOf = https://bitbucket.org/
+
+# Include local config if it exists (for machine-specific settings)
+[include]
+    path = ~/.gitconfig.local
+
+# macOS-specific settings
+[credential]
+    helper = osxkeychain
+    
+[difftool]
+    prompt = false
+
+[mergetool]
+    prompt = false
+
+# Performance optimizations
+[pack]
+    threads = 0
+
+[index]
+    version = 4
+
+# Security settings
+[transfer]
+    fsckobjects = true
+    
+[fetch]
+    fsckobjects = true
+    
+[receive]
+    fsckObjects = true
+
+# GPG signing (uncomment and configure as needed)
+# [commit]
+#     gpgsign = true
+    
+# [tag]
+#     gpgsign = true
+    
+# [gpg]
+#     program = gpg
