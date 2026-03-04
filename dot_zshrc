@@ -67,7 +67,7 @@ export CXXFLAGS="-std=c++23 -Wall -Wextra -O2 -g"
 export CFLAGS="-Wall -Wextra -O2 -g"
 export LDFLAGS=""  # Add linker flags here if needed
 
-# Smart g++ wrapper with sensible defaults
+# Smart g++ wrapper using GCC 15 with sensible defaults
 g++() {
     local default_flags="-std=c++23 -Wall -Wextra -Wpedantic -O2 -g"
 
@@ -99,14 +99,17 @@ g++() {
     # Always add warning flags unless explicitly overridden
     final_flags="$final_flags -Wall -Wextra -Wpedantic"
 
-    echo "🔨 g++ $final_flags $@"
-    command g++ $final_flags "$@"
+    echo "🔨 g++-15 $final_flags $@"
+    g++-15 $final_flags "$@"
 }
 
-# Quick compilation aliases for common patterns
-alias g++debug='g++ -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
-alias g++release='g++ -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
-alias g++fast='g++ -std=c++23 -O3 -march=native'
+# Quick compilation aliases for common patterns using GCC 15
+alias g++debug='g++-15 -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
+alias g++release='g++-15 -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
+alias g++fast='g++-15 -std=c++23 -O3 -march=native'
+
+# Direct GCC 15 access
+alias gcc15='g++-15'
 
 # Custom completion will be set up after fzf loads
 

@@ -235,8 +235,8 @@ return {
           program = function()
             local source_file = vim.fn.input('Source file: ', vim.fn.expand('%'), 'file')
             local executable = source_file:gsub("%.cpp$", ""):gsub("%.cc$", ""):gsub("%.cxx$", "")
-            -- Compile with debug flags
-            local compile_cmd = string.format("g++ -std=c++23 -Wall -Wextra -g -O0 -o %s %s", executable, source_file)
+            -- Compile with debug flags using GCC 15
+            local compile_cmd = string.format("g++-15 -std=c++23 -Wall -Wextra -g -O0 -o %s %s", executable, source_file)
             print("\n🔨 Compiling: " .. compile_cmd)
             local result = vim.fn.system(compile_cmd)
             if vim.v.shell_error ~= 0 then
