@@ -12,9 +12,10 @@ return {
             vim.cmd("rightbelow vsplit")
             vim.cmd("vertical resize " .. width)
             vim.cmd("terminal claude chat")
-            -- Hide buffer from buffer list (deferred)
+            -- Hide buffer from buffer list and disable winbar (deferred)
             vim.schedule(function()
               vim.bo.buflisted = false
+              vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
             end)
           end,
           desc = "Open Claude Chat Terminal (right 35%)",
@@ -27,9 +28,10 @@ return {
             if question and question ~= "" then
               vim.cmd("split")
               vim.cmd("terminal claude chat '" .. question:gsub("'", "\\'") .. "'")
-              -- Hide buffer from buffer list and tabs (deferred)
+              -- Hide buffer from buffer list and disable winbar (deferred)
               vim.schedule(function()
                 vim.bo.buflisted = false
+                vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
               end)
             end
           end,
@@ -102,9 +104,10 @@ return {
               vim.cmd("vsplit")
               vim.cmd("terminal claude chat 'Explain this code:\\n" ..
                 code:gsub("'", "\\'"):gsub("\\", "\\\\") .. "'")
-              -- Hide buffer from buffer list and tabs (deferred)
+              -- Hide buffer from buffer list and disable winbar (deferred)
               vim.schedule(function()
                 vim.bo.buflisted = false
+                vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
               end)
             end
           end,
