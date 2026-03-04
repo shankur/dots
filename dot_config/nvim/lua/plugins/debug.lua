@@ -174,18 +174,37 @@ return {
 
       -- No JavaScript debugging configured
 
-      -- Rust debugging (using lldb)
-      dap.adapters.lldb = {
-        type = 'executable',
-        command = '/usr/bin/lldb-vscode',
-        name = 'lldb'
+      -- Rust/C/C++ debugging (using CodeLLDB from Mason)
+      dap.adapters.codelldb = {
+        type = 'server',
+        port = "${port}",
+        executable = {
+          command = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/adapter/codelldb",
+          args = {"--port", "${port}"},
+        }
       }
 
+      -- Rust debugging
       dap.configurations.rust = {
         {
-          name = 'Launch',
-          type = 'lldb',
-          request = 'launch',
+          name = "Launch file",
+          type = "codelldb",
+          request = "launch",
+          program = function()
+            return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/target/debug/', 'file')
+          end,
+          cwd = '${workspaceFolder}',
+          stopOnEntry = false,
+          args = {},
+        },
+      }
+
+      -- C/C++ debugging
+      dap.configurations.cpp = {
+        {
+          name = "Launch file",
+          type = "codelldb",
+          request = "launch",
           program = function()
             return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
           end,
@@ -195,9 +214,7 @@ return {
         },
       }
 
-      -- C/C++ debugging
-      dap.configurations.cpp = dap.configurations.rust
-      dap.configurations.c = dap.configurations.rust
+      dap.configurations.c = dap.configurations.cpp
 
       print("🐛 Debug setup complete! Use F5 to start debugging or <leader>du for UI")
     end,
