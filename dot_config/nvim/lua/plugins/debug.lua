@@ -166,8 +166,21 @@ return {
 
       -- Language-specific configurations
 
-      -- Python debugging
+      -- Python debugging with custom configurations
       require("dap-python").setup("python3")
+
+      -- Add Python config with arguments support
+      table.insert(dap.configurations.python, {
+        type = 'python',
+        request = 'launch',
+        name = "Launch file with arguments",
+        program = '${file}',
+        console = "integratedTerminal",
+        args = function()
+          local input = vim.fn.input('Command line arguments (space-separated): ')
+          return vim.split(input, " ", { trimempty = true })
+        end,
+      })
 
       -- Go debugging
       require("dap-go").setup()
@@ -195,6 +208,20 @@ return {
           end,
           cwd = '${workspaceFolder}',
           stopOnEntry = false,
+          args = function()
+            local input = vim.fn.input('Command line arguments (space-separated): ')
+            return vim.split(input, " ", { trimempty = true })
+          end,
+        },
+        {
+          name = "Launch file (no args)",
+          type = "codelldb",
+          request = "launch",
+          program = function()
+            return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/target/debug/', 'file')
+          end,
+          cwd = '${workspaceFolder}',
+          stopOnEntry = false,
           args = {},
         },
       }
@@ -203,6 +230,20 @@ return {
       dap.configurations.cpp = {
         {
           name = "Launch file",
+          type = "codelldb",
+          request = "launch",
+          program = function()
+            return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+          end,
+          cwd = '${workspaceFolder}',
+          stopOnEntry = false,
+          args = function()
+            local input = vim.fn.input('Command line arguments (space-separated): ')
+            return vim.split(input, " ", { trimempty = true })
+          end,
+        },
+        {
+          name = "Launch file (no args)",
           type = "codelldb",
           request = "launch",
           program = function()
