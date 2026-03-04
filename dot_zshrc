@@ -52,6 +52,16 @@ alias sp='split-prompt'
 alias asplit='advanced-split'
 alias as='advanced-split'
 
+# Modern CLI Tools - Better alternatives to classic commands
+alias ls='eza --color=always --group-directories-first --icons'
+alias ll='eza -l --color=always --group-directories-first --icons'
+alias la='eza -la --color=always --group-directories-first --icons'
+alias lt='eza -T --color=always --group-directories-first --icons'
+alias l.='eza -a | grep -E "^\."'
+alias find='fd'
+alias grep='rg'
+alias cd='z'  # zoxide smart cd
+
 # Function to run command and display output in top pane
 run_split() {
     if [[ -n $TMUX ]]; then
