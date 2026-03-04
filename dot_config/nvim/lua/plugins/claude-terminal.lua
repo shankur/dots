@@ -15,7 +15,6 @@ return {
             -- Hide buffer from buffer list (deferred)
             vim.schedule(function()
               vim.bo.buflisted = false
-              vim.bo.buftype = "nofile"
             end)
           end,
           desc = "Open Claude Chat Terminal (right 35%)",
@@ -31,7 +30,6 @@ return {
               -- Hide buffer from buffer list and tabs (deferred)
               vim.schedule(function()
                 vim.bo.buflisted = false
-                vim.bo.buftype = "nofile"
               end)
             end
           end,
@@ -46,7 +44,6 @@ return {
             -- Hide buffer from buffer list and tabs (deferred)
             vim.schedule(function()
               vim.bo.buflisted = false
-              vim.bo.buftype = "nofile"
             end)
           end,
           desc = "Claude in Vertical Split",
@@ -75,7 +72,6 @@ return {
             -- Hide buffer from buffer list and tabs (deferred)
             vim.schedule(function()
               vim.bo.buflisted = false
-              vim.bo.buftype = "nofile"
             end)
           end,
           desc = "Claude in Floating Window",
@@ -91,7 +87,6 @@ return {
             -- Hide buffer from buffer list and tabs (deferred)
             vim.schedule(function()
               vim.bo.buflisted = false
-              vim.bo.buftype = "nofile"
             end)
           end,
           desc = "Claude in Bottom 40%",
@@ -110,7 +105,6 @@ return {
               -- Hide buffer from buffer list and tabs (deferred)
               vim.schedule(function()
                 vim.bo.buflisted = false
-                vim.bo.buftype = "nofile"
               end)
             end
           end,
