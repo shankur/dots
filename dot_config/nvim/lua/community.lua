@@ -11,7 +11,7 @@ return {
   { import = "astrocommunity.colorscheme.catppuccin" },
 
   -- Additional useful community plugins
-  { import = "astrocommunity.completion.copilot-lua-cmp" },
+  -- { import = "astrocommunity.completion.copilot-lua-cmp" }, -- Disabled: User doesn't want Copilot
   { import = "astrocommunity.pack.typescript" },
   { import = "astrocommunity.pack.python" },
   { import = "astrocommunity.pack.rust" },
