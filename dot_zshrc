@@ -62,6 +62,20 @@ alias find='fd'
 alias grep='rg'
 alias cd='z'  # zoxide smart cd
 
+# Fix completion for aliased commands
+# Disable problematic completions for aliased commands
+compdef _files ls ll la l.  # Simple file completion for eza aliases
+compdef _files find         # Simple file completion for fd alias
+compdef _files grep         # Simple file completion for rg alias
+
+# Enable completion for new tools if available
+if command -v eza &> /dev/null; then
+  # Generate eza completion if it supports it
+  if eza --generate-shell-completion zsh &> /dev/null; then
+    eval "$(eza --generate-shell-completion zsh)"
+  fi
+fi
+
 # Function to run command and display output in top pane
 run_split() {
     if [[ -n $TMUX ]]; then
