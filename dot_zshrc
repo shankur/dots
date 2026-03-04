@@ -62,20 +62,27 @@ find() { fd "$@" }
 grep() { rg "$@" }
 alias cd='z'  # zoxide smart cd (alias works fine for cd)
 
-# Set up completion for our functions - truly only files and directories
-_eza_completion() {
-  _path_files -/
-}
-_fd_completion() {
-  _path_files
-}
-_rg_completion() {
-  _path_files
+# Custom completion that ONLY shows actual files/directories
+_custom_files_only() {
+  local expl
+  _description files expl 'file'
+
+  # Get only files and directories from current location, exclude commands
+  local -a files
+  files=( ${(f)"$(command ls -1a 2>/dev/null | grep -v '^\.\.?$')"} )
+
+  # Add directories from other common paths if needed
+  if [[ $PREFIX == /* ]] || [[ $PREFIX == ~* ]]; then
+    _path_files "$@" && return
+  fi
+
+  compadd "$expl[@]" -a files
 }
 
-compdef _eza_completion ls ll la lt l.
-compdef _fd_completion find
-compdef _rg_completion grep
+# Apply our custom completion to all our functions
+compdef _custom_files_only ls ll la lt l.
+compdef _custom_files_only find
+compdef _custom_files_only grep
 
 # Function to run command and display output in top pane
 run_split() {
