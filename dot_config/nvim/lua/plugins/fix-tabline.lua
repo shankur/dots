@@ -1,13 +1,22 @@
--- Fix duplicate filename in tabline
+-- Fix redundant buffer display elements
 return {
   {
     "rebelot/heirline.nvim",
     opts = function(_, opts)
-      -- Override tabline to prevent duplication
-      if opts.tabline then
-        opts.tabline = nil  -- Disable custom tabline to use default
-      end
+      -- Keep the informative winbar, disable redundant tabline
+      opts.tabline = nil  -- This removes the redundant "Untitled" display
       return opts
     end,
+  },
+  {
+    "AstroNvim/astrocore",
+    opts = {
+      options = {
+        opt = {
+          -- Ensure we have a clean setup
+          showtabline = 0,  -- Disable tabline completely to avoid redundancy
+        },
+      },
+    },
   },
 }
