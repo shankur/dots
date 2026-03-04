@@ -104,24 +104,5 @@ source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
 # Starship Prompt
 eval "$(starship init zsh)"
 
-# Custom completion that ONLY shows actual files/directories (load after everything else)
-_custom_files_only() {
-  local expl
-  _description files expl 'file'
-
-  # Get only files and directories from current location, exclude commands
-  local -a files
-  files=( ${(f)"$(command ls -1a 2>/dev/null | grep -v '^\.\.?$')"} )
-
-  # Add directories from other common paths if needed
-  if [[ $PREFIX == /* ]] || [[ $PREFIX == ~* ]]; then
-    _path_files "$@" && return
-  fi
-
-  compadd "$expl[@]" -a files
-}
-
-# Apply our custom completion to all our functions (FINAL - after fzf)
-compdef _custom_files_only ls ll la lt l.
-compdef _custom_files_only find
-compdef _custom_files_only grep
+# Note: Tab completion shows some extra entries like 'file' command
+# This is normal behavior with enhanced completion systems (fzf, zoxide, etc.)
