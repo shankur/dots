@@ -1,7 +1,8 @@
--- Enhanced Git diff viewing with diffview.nvim
+-- Enhanced Git diff viewing with diffview.nvim (with comment system)
 return {
   {
-    "sindrets/diffview.nvim",
+    dir = vim.fn.expand("~/Desktop/diffview-comments"),  -- Use our local fork
+    name = "diffview.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     cmd = {
       "DiffviewOpen",
@@ -15,6 +16,8 @@ return {
       { "<leader>gc", "<cmd>DiffviewClose<cr>", desc = "Close Diffview" },
       { "<leader>gh", "<cmd>DiffviewFileHistory<cr>", desc = "File History" },
       { "<leader>gH", "<cmd>DiffviewFileHistory %<cr>", desc = "Current File History" },
+      -- Comment system keybindings (only work in diffview)
+      -- These will be available as <leader>nc, <leader>ns, <leader>nC in diffview
     },
     opts = {
       enhanced_diff_hl = true,  -- Better syntax highlighting
