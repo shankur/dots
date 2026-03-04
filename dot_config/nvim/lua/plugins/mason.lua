@@ -1,6 +1,4 @@
-if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
--- Customize Mason
+-- Mason setup for LSPs, formatters, linters, and debug adapters
 
 ---@type LazySpec
 return {
@@ -11,18 +9,41 @@ return {
     opts = {
       -- Make sure to use the names found in `:Mason`
       ensure_installed = {
-        -- install language servers
+        -- Language Servers
         "lua-language-server",
+        "typescript-language-server",
+        "pyright",
+        "gopls",
+        "rust-analyzer",
+        "clangd",
+        "json-lsp",
+        "yaml-language-server",
+        "tailwindcss-language-server",
 
-        -- install formatters
+        -- Formatters
+        "prettier",
         "stylua",
+        "black",
+        "isort",
+        "gofumpt",
+        "rustfmt",
 
-        -- install debuggers
-        "debugpy",
+        -- Linters
+        "eslint_d",
+        "pylint",
+        "golangci-lint",
 
-        -- install any other package
+        -- Debug Adapters
+        "debugpy",           -- Python debugger
+        "delve",             -- Go debugger
+        "js-debug-adapter",  -- Node.js/JavaScript debugger
+        "codelldb",          -- Rust/C/C++ debugger
+
+        -- Other tools
         "tree-sitter-cli",
       },
+      auto_update = false,
+      run_on_start = true,
     },
   },
 }
