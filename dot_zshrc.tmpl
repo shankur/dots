@@ -67,27 +67,36 @@ export CXXFLAGS="-std=c++23 -Wall -Wextra -O2 -g"
 export CFLAGS="-Wall -Wextra -O2 -g"
 export LDFLAGS=""  # Add linker flags here if needed
 
-# GCC 15 C++23 commands (since g++ alias gets overridden)
+{{- /* Cross-platform GCC configuration */ -}}
+{{- if eq .chezmoi.os "darwin" }}
+# macOS: Use Homebrew GCC 15
 alias gpp='g++-15 -std=c++23 -Wall -Wextra -O2 -g'
 alias c++23='g++-15 -std=c++23 -Wall -Wextra -O2 -g'
-
-# Update environment to use GCC 15 for build systems
 export CXX='g++-15'
 export CC='gcc-15'
-
-# Quick compilation aliases for common patterns using GCC 15
 alias g++debug='g++-15 -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
 alias g++release='g++-15 -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
 alias g++fast='g++-15 -std=c++23 -O3 -march=native'
-
-# C compiler aliases using GCC 15
 alias gccbuild='gcc-15 -std=c2x -Wall -Wextra -O2 -g'
 alias gccdebug='gcc-15 -std=c2x -Wall -Wextra -g -O0 -DDEBUG'
 alias gccfast='gcc-15 -std=c2x -O3 -march=native'
-
-# Direct GCC 15 access
 alias gcc15='gcc-15'
 alias gpp15='g++-15'
+{{- else }}
+# Linux: Use system GCC (or installed GCC)
+alias gpp='g++ -std=c++23 -Wall -Wextra -O2 -g'
+alias c++23='g++ -std=c++23 -Wall -Wextra -O2 -g'
+export CXX='g++'
+export CC='gcc'
+alias g++debug='g++ -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
+alias g++release='g++ -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
+alias g++fast='g++ -std=c++23 -O3 -march=native'
+alias gccbuild='gcc -std=c2x -Wall -Wextra -O2 -g'
+alias gccdebug='gcc -std=c2x -Wall -Wextra -g -O0 -DDEBUG'
+alias gccfast='gcc -std=c2x -O3 -march=native'
+alias gcc15='gcc'
+alias gpp15='g++'
+{{- end }}
 
 # Custom completion will be set up after fzf loads
 
@@ -106,14 +115,28 @@ run_split() {
 autoload -Uz compinit
 compinit -f
 
+{{- /* Cross-platform zsh plugins */ -}}
 # Basic autosuggestions and syntax highlighting (if available)
+{{- if eq .chezmoi.os "darwin" }}
 if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
-
 if [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
   source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
+{{- else }}
+# Linux: Try common package manager locations
+if [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+elif [[ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+if [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+elif [[ -f /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+{{- end }}
 
 # Ensure TAB completion works properly
 bindkey '^I' expand-or-complete
@@ -122,8 +145,20 @@ bindkey '^[[Z' reverse-menu-complete
 # Zoxide - Smart directory jumping
 eval "$(zoxide init zsh)"
 
-# Git-extras completions
-source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
+{{- /* Git-extras completions - cross-platform */ -}}
+{{- if eq .chezmoi.os "darwin" }}
+# macOS: Homebrew git-extras
+if [[ -f /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh ]]; then
+  source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
+fi
+{{- else }}
+# Linux: Try common locations for git-extras
+if [[ -f /usr/share/git-extras/git-extras-completion.zsh ]]; then
+  source /usr/share/git-extras/git-extras-completion.zsh
+elif [[ -f /usr/local/share/git-extras/git-extras-completion.zsh ]]; then
+  source /usr/local/share/git-extras/git-extras-completion.zsh
+fi
+{{- end }}
 
 # fzf - Fuzzy finder shell integration
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

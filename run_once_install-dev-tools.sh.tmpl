@@ -1,0 +1,128 @@
+#!/bin/bash
+# Cross-platform development tools installation script
+
+set -e
+
+echo "🚀 Installing development tools for {{ .chezmoi.os }}..."
+
+{{- if eq .chezmoi.os "darwin" }}
+
+# macOS installation using Homebrew
+echo "📦 Installing via Homebrew..."
+
+# Ensure Homebrew is installed
+if ! command -v brew &> /dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# Install development tools
+brew install gcc fd eza ripgrep zoxide
+brew install zsh-autosuggestions zsh-syntax-highlighting
+brew install git-extras starship
+
+echo "✅ macOS tools installed via Homebrew"
+
+{{- else if or (eq .chezmoi.osRelease.id "amzn") (eq .chezmoi.osRelease.id "rhel") (eq .chezmoi.osRelease.id "centos") }}
+
+# Amazon Linux / RHEL / CentOS
+echo "📦 Installing via yum/dnf for Amazon Linux/RHEL..."
+
+# Determine package manager
+if command -v dnf &> /dev/null; then
+    PKG_MGR="dnf"
+elif command -v yum &> /dev/null; then
+    PKG_MGR="yum"
+else
+    echo "❌ No supported package manager found"
+    exit 1
+fi
+
+# Enable EPEL repository for additional packages
+sudo $PKG_MGR install -y epel-release
+
+# Install development tools
+sudo $PKG_MGR groupinstall -y "Development Tools"
+sudo $PKG_MGR install -y gcc gcc-c++
+
+# Install modern tools (may need manual installation on older systems)
+echo "Installing fd-find..."
+if ! sudo $PKG_MGR install -y fd-find 2>/dev/null; then
+    # Fallback: install from GitHub releases
+    echo "Installing fd from GitHub releases..."
+    curl -LO https://github.com/sharkdp/fd/releases/latest/download/fd-musl_amd64.deb
+    # Note: For Amazon Linux, we'd need to convert or use rpm
+fi
+
+# Install eza (modern ls replacement)
+echo "Installing eza..."
+curl -sSL https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz | sudo tar xz -C /usr/local/bin
+
+# Install ripgrep
+if ! sudo $PKG_MGR install -y ripgrep 2>/dev/null; then
+    echo "Installing ripgrep from GitHub..."
+    curl -LO https://github.com/BurntSushi/ripgrep/releases/latest/download/ripgrep-14.1.0-x86_64-unknown-linux-musl.tar.gz
+    tar xf ripgrep-*.tar.gz
+    sudo cp ripgrep-*/rg /usr/local/bin/
+    rm -rf ripgrep-*
+fi
+
+# Install zoxide
+curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
+# Install starship
+curl -sSfL https://starship.rs/install.sh | sh
+
+# Install zsh plugins
+sudo $PKG_MGR install -y zsh
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions 2>/dev/null || true
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting 2>/dev/null || true
+
+echo "✅ Amazon Linux/RHEL tools installed"
+
+{{- else if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") }}
+
+# Ubuntu/Debian
+echo "📦 Installing via apt for Ubuntu/Debian..."
+
+# Update package list
+sudo apt update
+
+# Install development tools
+sudo apt install -y build-essential gcc g++
+
+# Install modern tools
+sudo apt install -y fd-find ripgrep zsh
+
+# Install eza
+echo "Installing eza..."
+curl -sSL https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz | sudo tar xz -C /usr/local/bin
+
+# Install zoxide
+curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
+# Install starship
+curl -sSfL https://starship.rs/install.sh | sh
+
+# Install zsh plugins
+sudo apt install -y zsh-autosuggestions zsh-syntax-highlighting
+
+echo "✅ Ubuntu/Debian tools installed"
+
+{{- else }}
+
+echo "🤔 Unsupported OS: {{ .chezmoi.os }}"
+echo "Please install these tools manually:"
+echo "- gcc/g++ (C/C++ compiler)"
+echo "- fd-find (better find)"
+echo "- eza (better ls)"
+echo "- ripgrep (better grep)"
+echo "- zoxide (smart cd)"
+echo "- starship (prompt)"
+echo "- zsh-autosuggestions"
+echo "- zsh-syntax-highlighting"
+
+{{- end }}
+
+echo "🎉 Development tools installation complete!"
+echo "💡 Restart your shell or run 'source ~/.zshrc' to apply changes"
