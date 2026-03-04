@@ -63,13 +63,13 @@ grep() { rg "$@" }
 alias cd='z'  # zoxide smart cd (alias works fine for cd)
 
 # C++ Compiler Default Flags
-export CXXFLAGS="-std=c++20 -Wall -Wextra -O2 -g"
+export CXXFLAGS="-std=c++23 -Wall -Wextra -O2 -g"
 export CFLAGS="-Wall -Wextra -O2 -g"
 export LDFLAGS=""  # Add linker flags here if needed
 
 # Smart g++ wrapper with sensible defaults
 g++() {
-    local default_flags="-std=c++20 -Wall -Wextra -Wpedantic -O2 -g"
+    local default_flags="-std=c++23 -Wall -Wextra -Wpedantic -O2 -g"
 
     # Check if user provided their own flags
     local has_std_flag=false
@@ -87,7 +87,7 @@ g++() {
     # Build final command with smart defaults
     local final_flags=""
     if ! $has_std_flag; then
-        final_flags="$final_flags -std=c++20"
+        final_flags="$final_flags -std=c++23"
     fi
     if ! $has_optimization; then
         final_flags="$final_flags -O2"
@@ -104,9 +104,9 @@ g++() {
 }
 
 # Quick compilation aliases for common patterns
-alias g++debug='g++ -std=c++20 -Wall -Wextra -g -O0 -DDEBUG'
-alias g++release='g++ -std=c++20 -Wall -Wextra -O3 -DNDEBUG'
-alias g++fast='g++ -std=c++20 -O3 -march=native'
+alias g++debug='g++ -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
+alias g++release='g++ -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
+alias g++fast='g++ -std=c++23 -O3 -march=native'
 
 # Custom completion will be set up after fzf loads
 
