@@ -229,7 +229,32 @@ return {
       -- C/C++ debugging
       dap.configurations.cpp = {
         {
-          name = "Launch file",
+          name = "Build and Launch",
+          type = "codelldb",
+          request = "launch",
+          program = function()
+            local source_file = vim.fn.input('Source file: ', vim.fn.expand('%'), 'file')
+            local executable = source_file:gsub("%.cpp$", ""):gsub("%.cc$", ""):gsub("%.cxx$", "")
+            -- Compile with debug flags
+            local compile_cmd = string.format("g++ -std=c++20 -Wall -Wextra -g -O0 -o %s %s", executable, source_file)
+            print("\n🔨 Compiling: " .. compile_cmd)
+            local result = vim.fn.system(compile_cmd)
+            if vim.v.shell_error ~= 0 then
+              print("❌ Compilation failed: " .. result)
+              return nil
+            end
+            print("✅ Compilation successful")
+            return vim.fn.getcwd() .. '/' .. executable
+          end,
+          cwd = '${workspaceFolder}',
+          stopOnEntry = false,
+          args = function()
+            local input = vim.fn.input('Command line arguments (space-separated): ')
+            return vim.split(input, " ", { trimempty = true })
+          end,
+        },
+        {
+          name = "Launch existing executable",
           type = "codelldb",
           request = "launch",
           program = function()
@@ -241,17 +266,6 @@ return {
             local input = vim.fn.input('Command line arguments (space-separated): ')
             return vim.split(input, " ", { trimempty = true })
           end,
-        },
-        {
-          name = "Launch file (no args)",
-          type = "codelldb",
-          request = "launch",
-          program = function()
-            return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
-          end,
-          cwd = '${workspaceFolder}',
-          stopOnEntry = false,
-          args = {},
         },
       }
 
