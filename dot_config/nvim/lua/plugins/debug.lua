@@ -14,7 +14,6 @@ return {
       -- Language-specific adapters
       "mfussenegger/nvim-dap-python",
       "leoluz/nvim-dap-go",
-      "mxsdev/nvim-dap-vscode-js", -- JavaScript/Node debugging
     },
 
     keys = {
@@ -173,38 +172,7 @@ return {
       -- Go debugging
       require("dap-go").setup()
 
-      -- Node.js/JavaScript debugging
-      require("dap-vscode-js").setup({
-        debugger_path = vim.fn.stdpath("data") .. "/mason/packages/js-debug-adapter",
-        adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' },
-      })
-
-      for _, language in ipairs({ "typescript", "javascript", "typescriptreact", "javascriptreact" }) do
-        dap.configurations[language] = {
-          {
-            type = "pwa-node",
-            request = "launch",
-            name = "Launch file",
-            program = "${file}",
-            cwd = "${workspaceFolder}",
-          },
-          {
-            type = "pwa-node",
-            request = "attach",
-            name = "Attach",
-            processId = require'dap.utils'.pick_process,
-            cwd = "${workspaceFolder}",
-          },
-          {
-            type = "pwa-chrome",
-            request = "launch",
-            name = "Start Chrome with \"localhost\"",
-            url = "http://localhost:3000",
-            webRoot = "${workspaceFolder}",
-            userDataDir = "${workspaceFolder}/.vscode/vscode-chrome-debug-userdatadir"
-          }
-        }
-      end
+      -- No JavaScript debugging configured
 
       -- Rust debugging (using lldb)
       dap.adapters.lldb = {

@@ -36,7 +36,6 @@ return {
         -- Debug Adapters
         "debugpy",           -- Python debugger
         "delve",             -- Go debugger
-        "js-debug-adapter",  -- Node.js/JavaScript debugger
         "codelldb",          -- Rust/C/C++ debugger
 
         -- Other tools
