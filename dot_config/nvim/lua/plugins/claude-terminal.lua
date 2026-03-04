@@ -7,54 +7,52 @@ return {
         -- Open Claude chat in terminal (right 35%) or toggle focus
         Claude = {
           function()
-            -- Check if Claude Chat buffer already exists
-            local claude_bufnr = nil
-            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-              local name = vim.api.nvim_buf_get_name(buf)
-              if name:match("Claude Chat") or (vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == "terminal") then
-                -- Check if this is our Claude terminal by looking for claude process
-                local lines = vim.api.nvim_buf_get_lines(buf, 0, 5, false)
-                for _, line in ipairs(lines) do
-                  if line:match("claude") then
-                    claude_bufnr = buf
-                    break
-                  end
-                end
-              end
-              if claude_bufnr then break end
+            -- Use global variable to track Claude buffer
+            if not vim.g.claude_bufnr then
+              vim.g.claude_bufnr = -1
             end
 
-            if claude_bufnr then
-              -- Claude window exists, check if we're in it
+            -- Check if tracked Claude buffer still exists and is valid
+            local claude_exists = false
+            local claude_winid = nil
+
+            if vim.g.claude_bufnr > 0 and vim.api.nvim_buf_is_valid(vim.g.claude_bufnr) then
+              -- Find window containing Claude buffer
+              for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == vim.g.claude_bufnr then
+                  claude_exists = true
+                  claude_winid = win
+                  break
+                end
+              end
+            end
+
+            if claude_exists then
+              -- Claude window exists, toggle focus
               local current_buf = vim.api.nvim_get_current_buf()
-              if current_buf == claude_bufnr then
+              if current_buf == vim.g.claude_bufnr then
                 -- We're in Claude, switch to previous window
                 vim.cmd("wincmd p")
               else
-                -- We're not in Claude, find and focus Claude window
-                for _, win in ipairs(vim.api.nvim_list_wins()) do
-                  if vim.api.nvim_win_get_buf(win) == claude_bufnr then
-                    vim.api.nvim_set_current_win(win)
-                    break
-                  end
-                end
+                -- Focus Claude window
+                vim.api.nvim_set_current_win(claude_winid)
               end
             else
-              -- No Claude window, create one
+              -- Create new Claude window
               local width = math.floor(vim.o.columns * 0.35)
               vim.cmd("rightbelow vsplit")
               vim.cmd("vertical resize " .. width)
               vim.cmd("terminal claude chat")
+
+              -- Store the buffer number
+              vim.g.claude_bufnr = vim.api.nvim_get_current_buf()
+
               -- Hide buffer from buffer list and disable winbar (deferred)
               vim.schedule(function()
                 vim.bo.buflisted = false
                 vim.wo.winbar = ""  -- Disable winbar to prevent duplicate filename
-                -- Set a distinctive name for the Claude buffer (check if name exists)
-                local success, _ = pcall(vim.api.nvim_buf_set_name, 0, "Claude Chat")
-                if not success then
-                  -- If name already exists, try with a number
-                  vim.api.nvim_buf_set_name(0, "Claude Chat " .. os.time())
-                end
+                -- Set a distinctive name for the Claude buffer
+                pcall(vim.api.nvim_buf_set_name, vim.g.claude_bufnr, "Claude Chat")
               end)
             end
           end,
