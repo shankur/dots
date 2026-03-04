@@ -12,6 +12,9 @@ return {
             vim.cmd("rightbelow vsplit")
             vim.cmd("vertical resize " .. width)
             vim.cmd("terminal claude chat")
+            -- Hide buffer from buffer list
+            vim.bo.buflisted = false
+            vim.bo.buftype = "nofile"
           end,
           desc = "Open Claude Chat Terminal (right 35%)",
         },
@@ -23,6 +26,9 @@ return {
             if question and question ~= "" then
               vim.cmd("split")
               vim.cmd("terminal claude chat '" .. question:gsub("'", "\\'") .. "'")
+              -- Hide buffer from buffer list and tabs
+              vim.bo.buflisted = false
+              vim.bo.buftype = "nofile"
             end
           end,
           desc = "Quick Claude Question",
@@ -33,6 +39,9 @@ return {
           function()
             vim.cmd("vsplit")
             vim.cmd("terminal claude chat")
+            -- Hide buffer from buffer list and tabs
+            vim.bo.buflisted = false
+            vim.bo.buftype = "nofile"
           end,
           desc = "Claude in Vertical Split",
         },
@@ -57,6 +66,9 @@ return {
               title_pos = 'center',
             })
             vim.cmd("terminal claude chat")
+            -- Hide buffer from buffer list and tabs
+            vim.bo.buflisted = false
+            vim.bo.buftype = "nofile"
           end,
           desc = "Claude in Floating Window",
         },
@@ -68,6 +80,9 @@ return {
             vim.cmd("botright split")
             vim.cmd("resize " .. height)
             vim.cmd("terminal claude chat")
+            -- Hide buffer from buffer list and tabs
+            vim.bo.buflisted = false
+            vim.bo.buftype = "nofile"
           end,
           desc = "Claude in Bottom 40%",
         },
@@ -82,6 +97,9 @@ return {
               vim.cmd("vsplit")
               vim.cmd("terminal claude chat 'Explain this code:\\n" ..
                 code:gsub("'", "\\'"):gsub("\\", "\\\\") .. "'")
+              -- Hide buffer from buffer list and tabs
+              vim.bo.buflisted = false
+              vim.bo.buftype = "nofile"
             end
           end,
           range = true,
