@@ -142,6 +142,57 @@ Edit these template files to customize per-platform:
 - `run_once_install-dev-tools.sh.tmpl` - Installation script
 - `nvim/lua/plugins/debug.lua.tmpl` - Debug configuration
 
+## ⚙️ Chezmoi Configuration Management
+
+### **Machine-Specific vs Shared Config**
+
+**Chezmoi's own config file** (`~/.config/chezmoi/chezmoi.toml`) **cannot be tracked directly** to prevent recursive configuration loops. You have two options:
+
+#### **Option 1: Keep Machine-Specific (Recommended)**
+```bash
+# Leave ~/.config/chezmoi/chezmoi.toml untracked
+# Perfect for personal settings that differ per machine:
+# - Email addresses (work vs personal)
+# - Machine-specific flags (is_work_machine, has_docker)
+# - Different editor preferences
+```
+
+#### **Option 2: Use Config Template (Advanced)**
+For shared config with machine-specific variables:
+
+1. **Create config template:**
+   ```bash
+   touch .chezmoi.toml.tmpl
+   ```
+
+2. **Template example:**
+   ```toml
+   [data]
+       name = "Your Name"
+   {{- if eq .chezmoi.hostname "work-laptop" }}
+       email = "work@company.com"
+       is_work_machine = true
+   {{- else }}
+       email = "personal@email.com"
+       is_work_machine = false
+   {{- end }}
+
+   [edit]
+       command = "nvim"
+
+   {{- if eq .chezmoi.os "darwin" }}
+   [data.system]
+       shell_theme = "catppuccin-mocha"
+   {{- end }}
+   ```
+
+3. **Deploy with variables:**
+   ```bash
+   chezmoi init --apply YOUR_USERNAME
+   ```
+
+**💡 Most users should stick with Option 1** - keep the config machine-specific for simplicity.
+
 ## 🔄 Updates
 
 To update your setup:
