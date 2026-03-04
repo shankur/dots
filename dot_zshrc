@@ -67,41 +67,13 @@ export CXXFLAGS="-std=c++23 -Wall -Wextra -O2 -g"
 export CFLAGS="-Wall -Wextra -O2 -g"
 export LDFLAGS=""  # Add linker flags here if needed
 
-# Smart g++ wrapper using GCC 15 with sensible defaults
-g++() {
-    local default_flags="-std=c++23 -Wall -Wextra -Wpedantic -O2 -g"
+# GCC 15 C++23 commands (since g++ alias gets overridden)
+alias gpp='g++-15 -std=c++23 -Wall -Wextra -O2 -g'
+alias c++23='g++-15 -std=c++23 -Wall -Wextra -O2 -g'
 
-    # Check if user provided their own flags
-    local has_std_flag=false
-    local has_optimization=false
-    local has_debug=false
-
-    for arg in "$@"; do
-        case "$arg" in
-            -std=*) has_std_flag=true ;;
-            -O*) has_optimization=true ;;
-            -g*) has_debug=true ;;
-        esac
-    done
-
-    # Build final command with smart defaults
-    local final_flags=""
-    if ! $has_std_flag; then
-        final_flags="$final_flags -std=c++23"
-    fi
-    if ! $has_optimization; then
-        final_flags="$final_flags -O2"
-    fi
-    if ! $has_debug; then
-        final_flags="$final_flags -g"
-    fi
-
-    # Always add warning flags unless explicitly overridden
-    final_flags="$final_flags -Wall -Wextra -Wpedantic"
-
-    echo "🔨 g++-15 $final_flags $@"
-    g++-15 $final_flags "$@"
-}
+# Update environment to use GCC 15 for build systems
+export CXX='g++-15'
+export CC='gcc-15'
 
 # Quick compilation aliases for common patterns using GCC 15
 alias g++debug='g++-15 -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
