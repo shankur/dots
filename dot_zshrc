@@ -80,8 +80,14 @@ alias g++debug='g++-15 -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
 alias g++release='g++-15 -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
 alias g++fast='g++-15 -std=c++23 -O3 -march=native'
 
+# C compiler aliases using GCC 15
+alias gccbuild='gcc-15 -std=c2x -Wall -Wextra -O2 -g'
+alias gccdebug='gcc-15 -std=c2x -Wall -Wextra -g -O0 -DDEBUG'
+alias gccfast='gcc-15 -std=c2x -O3 -march=native'
+
 # Direct GCC 15 access
-alias gcc15='g++-15'
+alias gcc15='gcc-15'
+alias gpp15='g++-15'
 
 # Custom completion will be set up after fzf loads
 
