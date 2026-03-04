@@ -4,12 +4,16 @@ return {
     "AstroNvim/astrocore",
     opts = {
       commands = {
-        -- Open Claude chat in terminal
+        -- Open Claude chat in terminal (right 35%)
         Claude = {
           function()
+            -- Calculate 35% of screen width
+            local width = math.floor(vim.o.columns * 0.35)
+            vim.cmd("rightbelow vsplit")
+            vim.cmd("vertical resize " .. width)
             vim.cmd("terminal claude chat")
           end,
-          desc = "Open Claude Chat Terminal",
+          desc = "Open Claude Chat Terminal (right 35%)",
         },
 
         -- Quick Claude question in split
@@ -57,6 +61,17 @@ return {
           desc = "Claude in Floating Window",
         },
 
+        -- Claude in bottom 40% (explicit command)
+        ClaudeBottom = {
+          function()
+            local height = math.floor(vim.o.lines * 0.4)
+            vim.cmd("botright split")
+            vim.cmd("resize " .. height)
+            vim.cmd("terminal claude chat")
+          end,
+          desc = "Claude in Bottom 40%",
+        },
+
         -- Ask Claude about selected code
         ClaudeExplain = {
           function()
@@ -77,10 +92,11 @@ return {
       mappings = {
         n = {
           -- Claude terminal keybindings
-          ["<leader>cc"] = { "<cmd>Claude<cr>", desc = "Claude Chat Terminal" },
+          ["<leader>cc"] = { "<cmd>Claude<cr>", desc = "Claude Chat (Right 35%)" },
           ["<leader>cq"] = { "<cmd>ClaudeQuick<cr>", desc = "Quick Claude Question" },
           ["<leader>cs"] = { "<cmd>ClaudeSplit<cr>", desc = "Claude Vertical Split" },
           ["<leader>cf"] = { "<cmd>ClaudeFloat<cr>", desc = "Claude Floating Window" },
+          ["<leader>cb"] = { "<cmd>ClaudeBottom<cr>", desc = "Claude Bottom 40%" },
         },
         v = {
           ["<leader>ce"] = { ":'<,'>ClaudeExplain<cr>", desc = "Explain Selected Code" },
