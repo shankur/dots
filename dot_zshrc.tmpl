@@ -79,7 +79,7 @@ lt() { eza -T --color=always --group-directories-first --icons "$@" }
 l.() { eza -a "$@" | grep -E "^\." }
 find() { fd "$@" }
 grep() { rg "$@" }
-alias cd='z'  # zoxide smart cd (alias works fine for cd)
+# zoxide: handled by zoxide init below
 
 # C++ Compiler Default Flags
 export CXXFLAGS="-std=c++23 -Wall -Wextra -O2 -g"
@@ -161,8 +161,8 @@ fi
 bindkey '^I' expand-or-complete
 bindkey '^[[Z' reverse-menu-complete
 
-# Zoxide - Smart directory jumping
-eval "$(zoxide init zsh)"
+# Zoxide - Smart directory jumping (replaces cd command)
+eval "$(zoxide init zsh --cmd cd)"
 
 {{- /* Git-extras completions - cross-platform */ -}}
 {{- if eq .chezmoi.os "darwin" }}
