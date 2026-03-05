@@ -134,7 +134,7 @@ run_split() {
 autoload -Uz compinit
 compinit -f
 
-{{- /* Cross-platform zsh plugins */ -}}
+{{/* Cross-platform zsh plugins */}}
 # Basic autosuggestions and syntax highlighting (if available)
 {{- if eq .chezmoi.os "darwin" }}
 if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
