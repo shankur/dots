@@ -4,13 +4,26 @@ This dotfiles setup works across **macOS**, **NixOS**, **Ubuntu**, **Amazon Linu
 
 ## 🚀 Quick Setup (One Command)
 
-### **New Machine Setup**
+### **Work Machine**
 ```bash
-# Install and configure everything
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/shankur/dots.git
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile work
 ```
 
-**First time setup:** You'll be prompted for your name and email for git config.
+### **Personal Machine**
+```bash
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile personal
+```
+
+### **Custom Configuration**
+```bash
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile work --name "Your Name" --email your@company.com
+```
+
+**Profile options:**
+- `--profile work` → Uses `ankur.sharma@snowflake.com`
+- `--profile personal` → Uses `inbox.ankur@pm.me`
+- `--name "Your Name"` → Optional, defaults to "Ankur Sharma"
+- `--email your@email.com` → Optional, overrides profile default
 
 **That's it!** Everything installs automatically:
 - ✅ All CLI tools (eza, fd, ripgrep, zoxide, starship, bat, delta)
@@ -202,22 +215,9 @@ chezmoi add ~/.config/new-tool
 chezmoi edit ~/.zshrc
 ```
 
-## 🔍 Manual Configuration (Optional)
-
-If the automatic setup didn't prompt you, create git config manually:
-
+**Check current profile:**
 ```bash
-mkdir -p ~/.config/chezmoi
-cat > ~/.config/chezmoi/chezmoi.toml << EOF
-[data]
-    name = "Your Name"
-    email = "your.email@example.com"
-EOF
-```
-
-Then apply:
-```bash
-chezmoi apply
+chezmoi data
 ```
 
 ## 🌍 Supported Platforms
@@ -265,8 +265,11 @@ Your development environment is now **truly portable**! 🚀
 # SSH into any remote server (NixOS, Ubuntu, Amazon Linux, etc.)
 ssh user@remote-server
 
-# One command to set up everything
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/shankur/dots.git
+# One command - work profile
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile work
+
+# Or personal profile
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile personal
 
 # Restart shell
 exec zsh
