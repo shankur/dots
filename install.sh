@@ -62,7 +62,7 @@ if ! command -v chezmoi &> /dev/null; then
     export PATH="$HOME/bin:$PATH"
 fi
 
-# Create chezmoi config
+# Create chezmoi config BEFORE init to prevent template from running
 echo "📝 Creating chezmoi configuration..."
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.toml << EOF
@@ -72,7 +72,7 @@ cat > ~/.config/chezmoi/chezmoi.toml << EOF
     email = "$EMAIL"
 EOF
 
-# Initialize and apply dotfiles
+# Initialize and apply dotfiles (config already exists, template won't overwrite)
 echo "⚙️  Initializing dotfiles..."
 chezmoi init --apply https://github.com/shankur/dots.git
 
