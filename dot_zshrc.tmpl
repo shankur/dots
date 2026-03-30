@@ -3,7 +3,7 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
 {{- end }}
 
-export PATH=$PATH:$HOME/.local/bin
+export PATH=$HOME/.local/bin:$PATH
 
 # Initialize completion system first
 autoload -Uz compinit
@@ -77,13 +77,18 @@ alias tw='tmux list-windows'
 alias tp='tmux list-panes'
 
 # Modern CLI Tools - Using functions instead of aliases for better completion
+# Unalias any existing aliases that conflict with our functions
+for cmd in ls grep find; do
+    unalias $cmd 2>/dev/null || true
+done
+
 ls() { eza --color=always --group-directories-first --icons "$@" }
 ll() { eza -l --color=always --group-directories-first --icons "$@" }
 la() { eza -la --color=always --group-directories-first --icons "$@" }
 lt() { eza -T --color=always --group-directories-first --icons "$@" }
-l.() { eza -a "$@" | grep -E "^\." }
+l.() { eza -a "$@" | command grep -E "^\." }
 find() { fd "$@" }
-grep() { rg "$@" }
+grep() { command rg "$@" }
 # zoxide: handled by zoxide init below
 
 # C++ Compiler Default Flags
