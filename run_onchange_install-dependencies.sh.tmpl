@@ -242,6 +242,14 @@ echo "🤖 Setting up Claude CLI..."
 echo "📝 Setting up Neovim..."
 # AstroNvim will be restored from dotfiles
 
+# Install TPM (Tmux Plugin Manager)
+if [[ ! -d ~/.tmux/plugins/tpm ]]; then
+    echo "🔌 Installing TPM (Tmux Plugin Manager)..."
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+else
+    echo "✓ TPM already installed"
+fi
+
 # Final message
 echo ""
 echo "✅ Dependencies installed!"
@@ -250,5 +258,6 @@ echo "🤖 Remember to authenticate Claude CLI manually"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Restart your shell"
-echo "  2. Run 'nvim' to complete AstroNvim setup"
-echo "  3. Authenticate Claude CLI if needed"
+echo "  2. Run 'tmux' then press Ctrl-a + I to install tmux plugins"
+echo "  3. Run 'nvim' to complete AstroNvim setup"
+echo "  4. Authenticate Claude CLI if needed"
