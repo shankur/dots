@@ -2,7 +2,28 @@
 # Bootstrap script for setting up development environment
 # This runs once when chezmoi applies configurations
 
+set -e
+
 echo "🚀 Setting up development environment..."
+
+# Helper function to check if a command exists
+command_exists() {
+    command -v "$1" &> /dev/null
+}
+
+# Helper function to install package only if command is missing
+install_if_missing() {
+    local cmd="$1"
+    local pkg="${2:-$1}"
+
+    if command_exists "$cmd"; then
+        echo "  ✓ $cmd already installed"
+        return 0
+    else
+        echo "  → Installing $pkg..."
+        return 1
+    fi
+}
 
 # Detect OS
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -10,31 +31,43 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "📱 Detected macOS"
 
     # Install Homebrew if not present
-    if ! command -v brew &> /dev/null; then
+    if ! command_exists brew; then
         echo "📦 Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    else
+        echo "✓ Homebrew already installed"
     fi
 
     # Install essential packages
-    echo "📦 Installing essential packages..."
-    brew install \
-        git \
-        neovim \
-        tmux \
-        go \
-        rust \
-        node \
-        python3 \
-        fzf \
-        git-extras \
-        starship \
-        zoxide \
-        delta
+    echo "📦 Checking essential packages..."
+    BREW_PACKAGES=""
+
+    install_if_missing git || BREW_PACKAGES="$BREW_PACKAGES git"
+    install_if_missing nvim neovim || BREW_PACKAGES="$BREW_PACKAGES neovim"
+    install_if_missing tmux || BREW_PACKAGES="$BREW_PACKAGES tmux"
+    install_if_missing go || BREW_PACKAGES="$BREW_PACKAGES go"
+    install_if_missing rustc rust || BREW_PACKAGES="$BREW_PACKAGES rust"
+    install_if_missing node || BREW_PACKAGES="$BREW_PACKAGES node"
+    install_if_missing python3 || BREW_PACKAGES="$BREW_PACKAGES python3"
+    install_if_missing fzf || BREW_PACKAGES="$BREW_PACKAGES fzf"
+    install_if_missing git-extras || BREW_PACKAGES="$BREW_PACKAGES git-extras"
+    install_if_missing starship || BREW_PACKAGES="$BREW_PACKAGES starship"
+    install_if_missing zoxide || BREW_PACKAGES="$BREW_PACKAGES zoxide"
+    install_if_missing delta || BREW_PACKAGES="$BREW_PACKAGES delta"
+
+    if [ -n "$BREW_PACKAGES" ]; then
+        echo "📦 Installing missing packages:$BREW_PACKAGES"
+        brew install $BREW_PACKAGES
+    fi
 
     # Install Sheldon (zsh plugin manager) via cargo
-    echo "🔌 Installing Sheldon..."
-    if command -v cargo &> /dev/null; then
-        cargo install sheldon
+    if command_exists cargo; then
+        if ! command_exists sheldon; then
+            echo "🔌 Installing Sheldon..."
+            cargo install sheldon
+        else
+            echo "✓ Sheldon already installed"
+        fi
     fi
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -42,41 +75,162 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "🐧 Detected Linux"
 
     # Detect package manager and install essentials
-    if command -v apt &> /dev/null; then
-        sudo apt update
-        sudo apt install -y \
-            git \
-            neovim \
-            tmux \
-            golang-go \
-            nodejs \
-            npm \
-            python3 \
-            python3-pip \
-            build-essential \
-            curl \
-            wget \
-            fzf
-    elif command -v dnf &> /dev/null; then
-        sudo dnf install -y \
-            git \
-            neovim \
-            tmux \
-            golang \
-            nodejs \
-            npm \
-            python3 \
-            python3-pip \
-            gcc \
-            curl \
-            wget \
-            fzf
+    if command_exists nix-env || [[ -d /etc/nixos ]]; then
+        echo "❄️  Using Nix package manager"
+        PACKAGES=""
+
+        install_if_missing git || PACKAGES="$PACKAGES nixpkgs.git"
+        install_if_missing nvim neovim || PACKAGES="$PACKAGES nixpkgs.neovim"
+        install_if_missing tmux || PACKAGES="$PACKAGES nixpkgs.tmux"
+        install_if_missing go || PACKAGES="$PACKAGES nixpkgs.go"
+        install_if_missing node nodejs || PACKAGES="$PACKAGES nixpkgs.nodejs"
+        install_if_missing python3 || PACKAGES="$PACKAGES nixpkgs.python3"
+        install_if_missing gcc || PACKAGES="$PACKAGES nixpkgs.gcc"
+        install_if_missing curl || PACKAGES="$PACKAGES nixpkgs.curl"
+        install_if_missing wget || PACKAGES="$PACKAGES nixpkgs.wget"
+        install_if_missing fzf || PACKAGES="$PACKAGES nixpkgs.fzf"
+        install_if_missing fd || PACKAGES="$PACKAGES nixpkgs.fd"
+        install_if_missing eza || PACKAGES="$PACKAGES nixpkgs.eza"
+        install_if_missing rg ripgrep || PACKAGES="$PACKAGES nixpkgs.ripgrep"
+        install_if_missing zoxide || PACKAGES="$PACKAGES nixpkgs.zoxide"
+        install_if_missing starship || PACKAGES="$PACKAGES nixpkgs.starship"
+        install_if_missing delta git-delta || PACKAGES="$PACKAGES nixpkgs.delta"
+        install_if_missing bat || PACKAGES="$PACKAGES nixpkgs.bat"
+
+        # Check for zsh plugins
+        if [[ ! -f ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+            echo "  → Installing zsh-autosuggestions..."
+            PACKAGES="$PACKAGES nixpkgs.zsh-autosuggestions"
+        else
+            echo "  ✓ zsh-autosuggestions already installed"
+        fi
+
+        if [[ ! -f ~/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+            echo "  → Installing zsh-syntax-highlighting..."
+            PACKAGES="$PACKAGES nixpkgs.zsh-syntax-highlighting"
+        else
+            echo "  ✓ zsh-syntax-highlighting already installed"
+        fi
+
+        if [ -n "$PACKAGES" ]; then
+            echo "📦 Installing missing packages:$PACKAGES"
+            nix-env -iA $PACKAGES
+        fi
+
+        # Rust via rustup (preferred over nix for rust)
+        if ! command_exists cargo; then
+            echo "🦀 Installing Rust..."
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+        else
+            echo "✓ Rust already installed"
+        fi
+
+    elif command_exists apt; then
+        echo "📦 Using apt package manager"
+        PACKAGES=""
+
+        install_if_missing git || PACKAGES="$PACKAGES git"
+        install_if_missing nvim neovim || PACKAGES="$PACKAGES neovim"
+        install_if_missing tmux || PACKAGES="$PACKAGES tmux"
+        install_if_missing go golang-go || PACKAGES="$PACKAGES golang-go"
+        install_if_missing node nodejs || PACKAGES="$PACKAGES nodejs npm"
+        install_if_missing python3 || PACKAGES="$PACKAGES python3 python3-pip"
+        install_if_missing gcc build-essential || PACKAGES="$PACKAGES build-essential"
+        install_if_missing curl || PACKAGES="$PACKAGES curl"
+        install_if_missing wget || PACKAGES="$PACKAGES wget"
+        install_if_missing fzf || PACKAGES="$PACKAGES fzf"
+        install_if_missing fd fd-find || PACKAGES="$PACKAGES fd-find"
+        install_if_missing rg ripgrep || PACKAGES="$PACKAGES ripgrep"
+        install_if_missing bat || PACKAGES="$PACKAGES bat"
+
+        if [ -n "$PACKAGES" ]; then
+            echo "📦 Installing missing packages:$PACKAGES"
+            sudo apt update
+            sudo apt install -y $PACKAGES
+        fi
+
+        # Install Rust if not present (for eza and other cargo tools)
+        if ! command_exists cargo; then
+            echo "🦀 Installing Rust..."
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+        else
+            echo "✓ Rust already installed"
+        fi
+
+    elif command_exists yum || command_exists dnf; then
+        PKG_MGR="dnf"
+        command_exists dnf || PKG_MGR="yum"
+
+        echo "📦 Using $PKG_MGR package manager"
+        PACKAGES=""
+
+        install_if_missing git || PACKAGES="$PACKAGES git"
+        install_if_missing nvim neovim || PACKAGES="$PACKAGES neovim"
+        install_if_missing tmux || PACKAGES="$PACKAGES tmux"
+        install_if_missing go golang || PACKAGES="$PACKAGES golang"
+        install_if_missing node nodejs || PACKAGES="$PACKAGES nodejs npm"
+        install_if_missing python3 || PACKAGES="$PACKAGES python3 python3-pip"
+        install_if_missing gcc || PACKAGES="$PACKAGES gcc"
+        install_if_missing curl || PACKAGES="$PACKAGES curl"
+        install_if_missing wget || PACKAGES="$PACKAGES wget"
+        install_if_missing fzf || PACKAGES="$PACKAGES fzf"
+        install_if_missing fd fd-find || PACKAGES="$PACKAGES fd-find"
+        install_if_missing rg ripgrep || PACKAGES="$PACKAGES ripgrep"
+        install_if_missing bat || PACKAGES="$PACKAGES bat"
+
+        if [ -n "$PACKAGES" ]; then
+            echo "📦 Installing missing packages:$PACKAGES"
+            sudo $PKG_MGR install -y $PACKAGES
+        fi
+
+        # Install Rust if not present (for eza and other cargo tools)
+        if ! command_exists cargo; then
+            echo "🦀 Installing Rust..."
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+        else
+            echo "✓ Rust already installed"
+        fi
     fi
 
-    # Install Rust
-    if ! command -v cargo &> /dev/null; then
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source $HOME/.cargo/env
+    # Install tools via cargo (for non-NixOS systems or tools not in repos)
+    if command_exists cargo && ! command_exists nix-env; then
+        if ! command_exists starship; then
+            echo "⭐ Installing starship..."
+            cargo install starship
+        else
+            echo "✓ Starship already installed"
+        fi
+
+        if ! command_exists zoxide; then
+            echo "📂 Installing zoxide..."
+            cargo install zoxide
+        else
+            echo "✓ Zoxide already installed"
+        fi
+
+        if ! command_exists delta; then
+            echo "📊 Installing delta..."
+            cargo install git-delta
+        else
+            echo "✓ Delta already installed"
+        fi
+
+        if ! command_exists eza; then
+            echo "📁 Installing eza..."
+            cargo install eza
+        else
+            echo "✓ Eza already installed"
+        fi
+
+        if ! command_exists sheldon; then
+            echo "🔌 Installing Sheldon..."
+            cargo install sheldon
+        else
+            echo "✓ Sheldon already installed"
+        fi
     fi
 fi
 
@@ -89,6 +243,7 @@ echo "📝 Setting up Neovim..."
 # AstroNvim will be restored from dotfiles
 
 # Final message
+echo ""
 echo "✅ Dependencies installed!"
 echo "🔄 Please restart your shell or run: source ~/.zshrc"
 echo "🤖 Remember to authenticate Claude CLI manually"
