@@ -10,8 +10,24 @@ return {
     opts = {
       ui = {
         border = "rounded",
+        icons = {
+          package_installed = "✓",
+          package_pending = "➜",
+          package_uninstalled = "✗",
+        },
       },
+      -- Disable Mason notifications
+      max_concurrent_installers = 4,
     },
+    config = function(_, opts)
+      require("mason").setup(opts)
+
+      -- Completely silence mason notifications
+      local mason_notify = require("mason-core.notify")
+      mason_notify.info = function() end
+      mason_notify.warn = function() end
+      mason_notify.error = function() end
+    end,
   },
   {
     "williamboman/mason-lspconfig.nvim",
