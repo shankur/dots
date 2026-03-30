@@ -1,58 +1,50 @@
 # Cross-Platform Development Environment
 
-This dotfiles setup works across **macOS**, **Amazon Linux**, **Ubuntu**, and other distributions.
+This dotfiles setup works across **macOS**, **NixOS**, **Ubuntu**, **Amazon Linux**, and other distributions.
 
-## 🚀 Quick Setup
+## 🚀 Quick Setup (One Command)
 
-### **Any Platform**
+### **New Machine Setup**
 ```bash
-# Install chezmoi and apply dotfiles
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply YOUR_GITHUB_USERNAME
+# Install and configure everything
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/shankur/dots.git
 ```
 
-### **Amazon Linux Specific Setup**
+**First time setup:** You'll be prompted for your name and email for git config.
 
-1. **Install basic dependencies:**
-   ```bash
-   sudo yum update -y
-   sudo yum install -y git curl zsh
-   ```
+**That's it!** Everything installs automatically:
+- ✅ All CLI tools (eza, fd, ripgrep, zoxide, starship, bat, delta)
+- ✅ Shell plugins (autosuggestions, syntax highlighting)
+- ✅ Neovim configuration
+- ✅ Tmux, Git, and all configs
 
-2. **Install development tools:**
-   ```bash
-   sudo yum groupinstall -y "Development Tools"
-   sudo yum install -y gcc gcc-c++
-   ```
-
-3. **Apply dotfiles:**
-   ```bash
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply YOUR_GITHUB_USERNAME
-   ```
-
-4. **Change default shell** (optional):
-   ```bash
-   chsh -s $(which zsh)
-   ```
+Then restart your shell:
+```bash
+exec zsh
+```
 
 ## 🎯 What Gets Installed
 
 ### **macOS (Homebrew)**
-- GCC 15 (g++-15, gcc-15)
-- Modern CLI tools: fd, eza, ripgrep, zoxide
+- Modern CLI tools: fd, eza, ripgrep, zoxide, starship, bat, delta
+- Development tools: git, neovim, tmux, go, rust, node, python3
 - Zsh plugins: autosuggestions, syntax-highlighting
-- Starship prompt
 
-### **Amazon Linux/RHEL**
-- System GCC with C++23 support
-- Modern CLI tools (compiled from source if needed)
-- Zsh plugins (cloned from GitHub)
-- Starship prompt
+### **NixOS (Nix)**
+- Modern CLI tools: fd, eza, ripgrep, zoxide, starship, bat, delta
+- Development tools: git, neovim, tmux, go, rust, node, python3
+- Zsh plugins: autosuggestions, syntax-highlighting
 
-### **Ubuntu/Debian**
-- System GCC with C++23 support
-- Modern CLI tools via apt
+### **Ubuntu/Debian (apt)**
+- Modern CLI tools: fd, eza, ripgrep, bat (via apt + cargo)
+- Development tools: git, neovim, tmux, go, node, python3
 - Zsh plugins via package manager
-- Starship prompt
+- Rust tools (starship, zoxide) via cargo
+
+### **Amazon Linux/RHEL (dnf/yum)**
+- Development tools: git, neovim, tmux, go, node, python3
+- Modern CLI tools compiled via cargo
+- Zsh plugins (cloned from GitHub)
 
 ## 🔧 Platform-Specific Features
 
@@ -193,24 +185,48 @@ For shared config with machine-specific variables:
 
 **💡 Most users should stick with Option 1** - keep the config machine-specific for simplicity.
 
-## 🔄 Updates
+## 🔄 Updates & Management
 
-To update your setup:
+**Update dotfiles:**
 ```bash
 chezmoi update
 ```
 
-To add new configurations:
+**Add new config files:**
 ```bash
 chezmoi add ~/.config/new-tool
+```
+
+**Edit a config file:**
+```bash
+chezmoi edit ~/.zshrc
+```
+
+## 🔍 Manual Configuration (Optional)
+
+If the automatic setup didn't prompt you, create git config manually:
+
+```bash
+mkdir -p ~/.config/chezmoi
+cat > ~/.config/chezmoi/chezmoi.toml << EOF
+[data]
+    name = "Your Name"
+    email = "your.email@example.com"
+EOF
+```
+
+Then apply:
+```bash
+chezmoi apply
 ```
 
 ## 🌍 Supported Platforms
 
 ✅ **macOS** (Apple Silicon + Intel)
-✅ **Amazon Linux 2/2023**
+✅ **NixOS** (via nix-env)
 ✅ **Ubuntu 20.04+**
 ✅ **Debian 11+**
+✅ **Amazon Linux 2/2023**
 ✅ **RHEL 8+**
 ⚠️ **CentOS** (with manual package installation)
 
@@ -243,19 +259,19 @@ Your development environment is now **truly portable**! 🚀
 - **Consistent experience** across all platforms
 - **Beautiful** syntax highlighting and prompts
 
-## 🎯 Example: Amazon Linux Setup
+## 🚀 Example: Remote Server Setup
 
 ```bash
-# 1. SSH into Amazon Linux instance
-ssh ec2-user@your-instance-ip
+# SSH into any remote server (NixOS, Ubuntu, Amazon Linux, etc.)
+ssh user@remote-server
 
-# 2. One-command setup
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply YOUR_GITHUB_USERNAME
+# One command to set up everything
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/shankur/dots.git
 
-# 3. Restart shell or source config
+# Restart shell
 exec zsh
 
-# 4. Enjoy your portable development environment!
+# Enjoy your complete dev environment!
 ls    # Now uses eza with icons
 z ~   # Smart navigation with zoxide
 ```
