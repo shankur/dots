@@ -2,6 +2,11 @@
 
 ---@type LazySpec
 return {
+  -- Ensure mason-lspconfig loads first
+  {
+    "williamboman/mason-lspconfig.nvim",
+    dependencies = { "williamboman/mason.nvim" },
+  },
   -- use mason-tool-installer for automatically installing Mason packages
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
@@ -9,8 +14,8 @@ return {
       "williamboman/mason.nvim",
       "williamboman/mason-lspconfig.nvim",
     },
-    -- overrides `require("mason-tool-installer").setup(...)`
-    opts = function()
+    event = "VeryLazy", -- Delay loading to ensure dependencies are ready
+    config = function()
       -- Detect if we're on an unsupported architecture
       local uname = vim.loop.os_uname()
       local is_arm = uname.machine == "aarch64" or uname.machine == "arm64"
@@ -53,11 +58,14 @@ return {
         table.insert(ensure_installed, "rustfmt")
       end
 
-      return {
-        ensure_installed = ensure_installed,
-        auto_update = false,
-        run_on_start = true,
-      }
+      -- Wait for mason-lspconfig to be ready before setting up
+      vim.defer_fn(function()
+        require("mason-tool-installer").setup({
+          ensure_installed = ensure_installed,
+          auto_update = false,
+          run_on_start = true,
+        })
+      end, 100) -- Small delay to ensure dependencies are loaded
     end,
   },
 }
