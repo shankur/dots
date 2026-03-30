@@ -172,7 +172,9 @@ bindkey '^I' expand-or-complete
 bindkey '^[[Z' reverse-menu-complete
 
 # Zoxide - Smart directory jumping (replaces cd command)
-eval "$(zoxide init zsh --cmd cd)"
+if command -v zoxide &> /dev/null; then
+    eval "$(zoxide init zsh --cmd cd)"
+fi
 
 {{- /* Git-extras completions - cross-platform */ -}}
 {{- if eq .chezmoi.os "darwin" }}
@@ -193,7 +195,9 @@ fi
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Starship Prompt
-eval "$(starship init zsh)"
+if command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+fi
 
 # Note: Tab completion shows some extra entries like 'file' command
 # This is normal behavior with enhanced completion systems (fzf, zoxide, etc.)
