@@ -1,71 +1,56 @@
 -- Mason setup for LSPs, formatters, linters, and debug adapters
+-- Note: mason-tool-installer has compatibility issues with AstroNvim
+-- LSP servers are auto-installed via mason-lspconfig
+-- Other tools (formatters, linters) can be installed manually via :Mason
 
 ---@type LazySpec
 return {
-  -- Ensure mason-lspconfig loads first
+  {
+    "williamboman/mason.nvim",
+    opts = {
+      ui = {
+        border = "rounded",
+      },
+    },
+  },
   {
     "williamboman/mason-lspconfig.nvim",
-    dependencies = { "williamboman/mason.nvim" },
-  },
-  -- use mason-tool-installer for automatically installing Mason packages
-  {
-    "WhoIsSethDaniel/mason-tool-installer.nvim",
-    dependencies = {
-      "williamboman/mason.nvim",
-      "williamboman/mason-lspconfig.nvim",
-    },
-    event = "VeryLazy", -- Delay loading to ensure dependencies are ready
-    config = function()
-      -- Detect if we're on an unsupported architecture
+    opts = function(_, opts)
+      -- Detect ARM architecture
       local uname = vim.loop.os_uname()
       local is_arm = uname.machine == "aarch64" or uname.machine == "arm64"
 
-      local ensure_installed = {
-        -- Language Servers
-        "lua-language-server",
-        "typescript-language-server",
+      -- Auto-install these LSP servers
+      opts.ensure_installed = {
+        "lua_ls",
+        "ts_ls",
         "pyright",
         "gopls",
-        "rust-analyzer",
-        "json-lsp",
-        "yaml-language-server",
-        "tailwindcss-language-server",
-
-        -- Formatters
-        "prettier",
-        "stylua",
-        "black",
-        "isort",
-        "gofumpt",
-
-        -- Linters
-        "eslint_d",
-        "pylint",
-        "golangci-lint",
-
-        -- Debug Adapters
-        "debugpy",           -- Python debugger
-        "delve",             -- Go debugger
-        "codelldb",          -- Rust/C/C++ debugger
-
-        -- Other tools
-        "tree-sitter-cli",
+        "rust_analyzer",
+        "jsonls",
+        "yamlls",
+        "tailwindcss",
       }
 
-      -- Add clangd and rustfmt only if not on ARM (Mason doesn't support them on ARM)
+      -- Only add clangd on non-ARM (ARM uses system clangd from Nix)
       if not is_arm then
-        table.insert(ensure_installed, "clangd")
-        table.insert(ensure_installed, "rustfmt")
+        table.insert(opts.ensure_installed, "clangd")
       end
 
-      -- Wait for mason-lspconfig to be ready before setting up
-      vim.defer_fn(function()
-        require("mason-tool-installer").setup({
-          ensure_installed = ensure_installed,
-          auto_update = false,
-          run_on_start = true,
-        })
-      end, 100) -- Small delay to ensure dependencies are loaded
+      return opts
     end,
   },
+  -- Disable mason-tool-installer due to compatibility issues
+  {
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    enabled = false,
+  },
 }
+
+-- To install formatters/linters/debug adapters manually:
+-- Open neovim and run :Mason, then press 'i' to install:
+--   Formatters: prettier, stylua, black, isort, gofumpt, rustfmt (non-ARM only)
+--   Linters: eslint_d, pylint, golangci-lint
+--   Debug: debugpy, delve, codelldb
+
+
