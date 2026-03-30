@@ -97,6 +97,10 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         install_if_missing delta git-delta || PACKAGES="$PACKAGES nixpkgs.delta"
         install_if_missing bat || PACKAGES="$PACKAGES nixpkgs.bat"
 
+        # LSP servers and formatters (Mason doesn't support ARM architecture)
+        install_if_missing clangd clang-tools || PACKAGES="$PACKAGES nixpkgs.clang-tools"
+        install_if_missing rustfmt || PACKAGES="$PACKAGES nixpkgs.rustfmt"
+
         # Check for zsh plugins
         if [[ ! -f ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
             echo "  → Installing zsh-autosuggestions..."
