@@ -4,3 +4,6 @@
 
 -- Disable the intro/welcome screen
 vim.opt.shortmess:append("I")
+
+-- Suppress all popup notifications
+vim.notify = function() end
