@@ -5,6 +5,10 @@ return {
   -- use mason-tool-installer for automatically installing Mason packages
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
+    dependencies = {
+      "williamboman/mason.nvim",
+      "williamboman/mason-lspconfig.nvim",
+    },
     -- overrides `require("mason-tool-installer").setup(...)`
     opts = function()
       -- Detect if we're on an unsupported architecture
