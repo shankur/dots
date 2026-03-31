@@ -176,14 +176,14 @@
     last = log -1 HEAD --stat
     
     # Show what I did today  
-    today = log --since='1 Day Ago' --oneline --author="inbox.ankur@pm.me"
+    today = log --since='1 Day Ago' --oneline --author="{{ .email }}"
     
     # Show what I did this week
-    week = log --since='1 Week Ago' --oneline --author="inbox.ankur@pm.me"
+    week = log --since='1 Week Ago' --oneline --author="{{ .email }}"
     
     # Machine-specific aliases
     # Personal project shortcuts  
-    side = log --oneline --all --author="inbox.ankur@pm.me"
+    side = log --oneline --all --author="{{ .email }}"
     
     # Stash shortcuts
     sl = stash list

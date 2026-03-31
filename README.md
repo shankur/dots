@@ -6,24 +6,15 @@ This dotfiles setup works across **macOS**, **NixOS**, **Ubuntu**, **Amazon Linu
 
 ### **Work Machine**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile work
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash
 ```
 
 ### **Personal Machine**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile personal
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash
 ```
 
-### **Custom Configuration**
-```bash
-curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile work --name "Your Name" --email your@company.com
-```
-
-**Profile options:**
-- `--profile work` → Uses `ankur.sharma@snowflake.com`
-- `--profile personal` → Uses `inbox.ankur@pm.me`
-- `--name "Your Name"` → Optional, defaults to "Ankur Sharma"
-- `--email your@email.com` → Optional, overrides profile default
+Chezmoi will interactively prompt for your profile, name, and email on first run.
 
 **That's it!** Everything installs automatically:
 - ✅ All CLI tools (eza, fd, ripgrep, zoxide, starship, bat, delta)
@@ -265,11 +256,8 @@ Your development environment is now **truly portable**! 🚀
 # SSH into any remote server (NixOS, Ubuntu, Amazon Linux, etc.)
 ssh user@remote-server
 
-# One command - work profile
-curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile work
-
-# Or personal profile
-curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash -s -- --profile personal
+# One command setup
+curl -fsSL https://raw.githubusercontent.com/shankur/dots/main/install.sh | bash
 
 # Restart shell
 exec zsh

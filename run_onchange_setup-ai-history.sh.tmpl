@@ -1,0 +1,25 @@
+#!/bin/bash
+# Clone ai-history repo
+# repo: {{ .ai_history_repo }}
+set -e
+
+DEST="$HOME/ai-history"
+REPO="{{ .ai_history_repo }}"
+
+if [ -z "$REPO" ]; then
+    echo "ai_history_repo not set in chezmoi config, skipping"
+    exit 0
+fi
+
+if [ -d "$DEST" ]; then
+    REMOTE=$(git -C "$DEST" remote get-url origin 2>/dev/null)
+    if [ "$REMOTE" != "$REPO" ]; then
+        echo "FATAL: $DEST exists but remote ($REMOTE) does not match expected ($REPO)" >&2
+        exit 1
+    fi
+    echo "ai-history already cloned"
+    exit 0
+fi
+
+git clone "$REPO" "$DEST"
+echo "ai-history repo cloned to $DEST"
