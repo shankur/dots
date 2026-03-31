@@ -1,5 +1,5 @@
 [data]
-    profile = "{{ promptChoiceOnce .profile "Profile" (list "work" "personal") }}"
-    name = "{{ promptStringOnce .name "Your full name" }}"
-    email = "{{ promptStringOnce .email "Your email" }}"
-    ai_history_repo = "{{ promptStringOnce .ai_history_repo "AI history git repo URL" }}"
+    profile = "{{ promptChoiceOnce . "profile" "Profile" (list "work" "personal") }}"
+    name = "{{ promptStringOnce . "name" "Your full name" }}"
+    email = "{{ promptStringOnce . "email" "Your email" }}"
+    ai_history_repo = "{{ promptStringOnce . "ai_history_repo" "AI history git repo URL" }}"
