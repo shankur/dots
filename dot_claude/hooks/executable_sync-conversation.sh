@@ -53,7 +53,23 @@ done
 
 # Only commit if we copied files
 if [ $files_copied -gt 0 ] && ! git diff --cached --quiet 2>/dev/null; then
-    git commit -q -m "sync memory: $project_dir/$date_path ($files_copied files) $(date +%Y-%m-%d-%H%M%S)"
+    # Generate session summary from MEMORY.md
+    summary=""
+    if [ -f "$target_dir/MEMORY.md" ]; then
+        # Extract first few meaningful lines (skip headers and empty lines)
+        summary=$(grep -v '^#' "$target_dir/MEMORY.md" | grep -v '^$' | head -5 | sed 's/^/  /')
+    fi
+
+    # Build commit message
+    commit_msg="sync memory: $project_dir/$date_path ($files_copied files) $(date +%Y-%m-%d-%H%M%S)"
+    if [ -n "$summary" ]; then
+        commit_msg="$commit_msg
+
+Session summary:
+$summary"
+    fi
+
+    git commit -q -m "$commit_msg"
     nohup git push -q origin "$BRANCH" &>/dev/null &
 fi
 
