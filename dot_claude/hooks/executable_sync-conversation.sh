@@ -10,6 +10,7 @@ TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty')
 
 project_dir=$(basename "$(dirname "$TRANSCRIPT")" | sed 's/^-home-repo-//')
 conv_file=$(basename "$TRANSCRIPT")
+date_path=$(date +%d/%m/%Y)
 
 cd "$REPO" || exit 0
 
@@ -28,12 +29,12 @@ else
     git checkout -q -b "$BRANCH" 2>/dev/null
 fi
 
-mkdir -p "conversations/$project_dir"
-cp "$TRANSCRIPT" "conversations/$project_dir/$conv_file"
-git add "conversations/$project_dir/$conv_file"
+mkdir -p "conversations/$project_dir/$date_path"
+cp "$TRANSCRIPT" "conversations/$project_dir/$date_path/$conv_file"
+git add "conversations/$project_dir/$date_path/$conv_file"
 
 if ! git diff --cached --quiet 2>/dev/null; then
-    git commit -q -m "sync $project_dir/$conv_file $(date +%Y-%m-%d-%H%M)"
+    git commit -q -m "sync $project_dir/$date_path/$conv_file $(date +%Y-%m-%d-%H%M)"
     git push -q origin "$BRANCH" 2>/dev/null
 fi
 
