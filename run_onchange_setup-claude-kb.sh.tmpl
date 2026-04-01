@@ -1,10 +1,10 @@
 #!/bin/bash
 # Clone claude-kb plugin repo
-# repo: {{ .claude_kb_repo }}
+# repo: {{ index . "claude_kb_repo" }}
 set -e
 
 DEST="$HOME/claude-kb"
-REPO="{{ .claude_kb_repo }}"
+REPO="{{ index . "claude_kb_repo" }}"
 
 if [ -z "$REPO" ]; then
     echo "claude_kb_repo not set in chezmoi config, skipping"
