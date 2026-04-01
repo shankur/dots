@@ -201,6 +201,9 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
     # Install tools via cargo (for non-NixOS systems or tools not in repos)
     if command_exists cargo && ! command_exists nix-env; then
+        # Ensure cargo bin is in PATH for immediate use
+        export PATH="$HOME/.cargo/bin:$PATH"
+
         if ! command_exists starship; then
             echo "⭐ Installing starship..."
             cargo install starship
