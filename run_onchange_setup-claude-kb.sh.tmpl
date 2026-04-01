@@ -1,0 +1,25 @@
+#!/bin/bash
+# Clone claude-kb plugin repo
+# repo: {{ .claude_kb_repo }}
+set -e
+
+DEST="$HOME/claude-kb"
+REPO="{{ .claude_kb_repo }}"
+
+if [ -z "$REPO" ]; then
+    echo "claude_kb_repo not set in chezmoi config, skipping"
+    exit 0
+fi
+
+if [ -d "$DEST" ]; then
+    REMOTE=$(git -C "$DEST" remote get-url origin 2>/dev/null)
+    if [ "$REMOTE" != "$REPO" ]; then
+        echo "FATAL: $DEST exists but remote ($REMOTE) does not match expected ($REPO)" >&2
+        exit 1
+    fi
+    echo "claude-kb already cloned"
+    exit 0
+fi
+
+git clone "$REPO" "$DEST"
+echo "claude-kb repo cloned to $DEST"
