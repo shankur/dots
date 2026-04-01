@@ -1,15 +1,21 @@
 #!/bin/bash
-# Sync Claude conversation transcript to ai-history repo on session end
+# Sync Claude memory files to ai-history repo on session end
 
 REPO="$HOME/ai-history"
-BRANCH="transcripts"
+BRANCH="memory"
 
 INPUT=$(cat)
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty')
 [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ] && exit 0
 
+# Extract project name and find memory directory
 project_dir=$(basename "$(dirname "$TRANSCRIPT")" | sed 's/^-home-repo-//')
-conv_file=$(basename "$TRANSCRIPT")
+memory_dir="$HOME/.claude/projects/$(dirname "$TRANSCRIPT" | sed 's|.*/\.claude/||')/memory"
+
+# Exit if no memory directory exists
+[ ! -d "$memory_dir" ] && exit 0
+
+timestamp=$(date +%H%M%S)
 date_path=$(date +%d/%m/%Y)
 
 cd "$REPO" || exit 0
@@ -29,12 +35,22 @@ else
     git checkout -q -b "$BRANCH" 2>/dev/null
 fi
 
-mkdir -p "conversations/$project_dir/$date_path"
-cp "$TRANSCRIPT" "conversations/$project_dir/$date_path/$conv_file"
-git add "conversations/$project_dir/$date_path/$conv_file"
+target_dir="memory/$project_dir/$date_path"
+mkdir -p "$target_dir"
 
-if ! git diff --cached --quiet 2>/dev/null; then
-    git commit -q -m "sync $project_dir/$date_path/$conv_file $(date +%Y-%m-%d-%H%M)"
+# Copy all memory markdown files with timestamp suffix
+files_copied=0
+for memory_file in "$memory_dir"/*.md; do
+    [ -f "$memory_file" ] || continue
+    filename=$(basename "$memory_file" .md)
+    cp "$memory_file" "$target_dir/${filename}-${timestamp}.md"
+    git add "$target_dir/${filename}-${timestamp}.md"
+    files_copied=$((files_copied + 1))
+done
+
+# Only commit if we copied files
+if [ $files_copied -gt 0 ] && ! git diff --cached --quiet 2>/dev/null; then
+    git commit -q -m "sync memory: $project_dir/$date_path ($files_copied files) $(date +%Y-%m-%d-%H%M%S)"
     git push -q origin "$BRANCH" 2>/dev/null
 fi
 
