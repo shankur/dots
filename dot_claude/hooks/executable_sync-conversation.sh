@@ -5,7 +5,7 @@
 exec >> "$HOME/.claude/hooks/sync-conversation.log" 2>&1
 
 REPO="$HOME/ai-history"
-BRANCH="memory"
+BRANCH="main"
 
 INPUT=$(cat)
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty')
