@@ -4,7 +4,7 @@
 
 input=$(cat)
 prompt=$(echo "$input" | jq -r '.prompt // empty')
-[ -z "$prompt" ] && echo '{"decision":"APPROVE"}' && exit 0
+[ -z "$prompt" ] && echo '{"decision":"approve"}' && exit 0
 
 context="# currentDate
 Today's date is $(date +%Y-%m-%d)."
@@ -27,4 +27,5 @@ ${context}
       IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
 </system-reminder>"
 
-jq -n --arg msg "$message" '{"decision":"APPROVE","suppressOutput":true,"message":$msg}'
+jq -n --arg ctx "$message" '{"decision":"approve","suppressOutput":true,"additionalContext":$ctx}'
+exit 0
