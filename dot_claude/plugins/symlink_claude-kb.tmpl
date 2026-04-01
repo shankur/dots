@@ -1,1 +1,1 @@
-{{ if index . "claude_kb_repo" }}{{ .chezmoi.homeDir }}/claude-kb{{ end }}
+{{ if hasKey . "claude_kb_repo" }}{{ if .claude_kb_repo }}{{ .chezmoi.homeDir }}/claude-kb{{ end }}{{ end }}
