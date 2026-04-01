@@ -1,5 +1,30 @@
 {
   "permissions": {
-    "allow": []
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cd:*)",
+      "Bash(pwd:*)",
+      "Bash(fd:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(less:*)",
+      "Bash(tree:*)",
+      "Bash(echo:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch -l:*)",
+      "Bash(git branch --list:*)",
+      "Bash(git remote -v:*)",
+      "Bash(git remote --verbose:*)",
+      "Bash(chezmoi managed:*)",
+      "Bash(chezmoi diff:*)",
+      "Bash(chezmoi data:*)"
+    ]
   }
 }
