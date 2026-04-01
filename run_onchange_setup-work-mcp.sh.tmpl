@@ -1,0 +1,35 @@
+{{ if eq .profile "work" -}}
+#!/bin/bash
+# Setup Snowflake MCP servers for work profile
+# hash: {{ include "run_onchange_setup-work-mcp.sh.tmpl" | sha256sum }}
+
+set -e
+
+echo "🔧 Setting up Snowflake MCP servers..."
+
+# Check if sf command is available
+if ! command -v sf &> /dev/null; then
+    echo "⚠️  sf CLI not found, skipping MCP setup"
+    exit 0
+fi
+
+# List of MCP tools to add
+MCP_TOOLS=(
+    "confluence"
+    "jira"
+    "snowci"
+    "snowhouse"
+    "github"
+    "graphite"
+    "buildkite"
+    "glean"
+    "jenkins"
+)
+
+for tool in "${MCP_TOOLS[@]}"; do
+    echo "  → Adding MCP server: $tool"
+    sf __mcp add "$tool" 2>/dev/null || echo "    ⚠️  Failed to add $tool (may already exist)"
+done
+
+echo "✅ MCP servers configured"
+{{ end -}}
