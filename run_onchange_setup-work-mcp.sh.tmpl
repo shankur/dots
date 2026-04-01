@@ -13,10 +13,20 @@ if ! command -v sf &> /dev/null; then
     exit 0
 fi
 
+# Change to Snowflake trunk directory
+TRUNK_DIR="$HOME/Snowflake/trunk"
+if [ ! -d "$TRUNK_DIR" ]; then
+    echo "⚠️  $TRUNK_DIR not found, skipping MCP setup"
+    exit 0
+fi
+
+cd "$TRUNK_DIR"
+
 # List of MCP tools to add
 MCP_TOOLS=(
     "confluence"
     "jira"
+    "jira_wo"
     "snowci"
     "snowhouse"
     "github"
