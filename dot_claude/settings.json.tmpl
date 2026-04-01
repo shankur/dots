@@ -17,6 +17,16 @@
     "command": "input=$(cat); model=$(echo \"$input\" | jq -r '.model.display_name // \"Unknown\"'); total_in=$(echo \"$input\" | jq -r '.context_window.total_input_tokens // 0'); total_out=$(echo \"$input\" | jq -r '.context_window.total_output_tokens // 0'); used_pct=$(echo \"$input\" | jq -r '.context_window.used_percentage // 0'); transcript=$(echo \"$input\" | jq -r '.transcript_path // \"\"'); if [ -f \"$transcript\" ]; then start=$(stat -c %Y \"$transcript\" 2>/dev/null || stat -f %m \"$transcript\" 2>/dev/null); now=$(date +%s); elapsed=$((now - start)); if [ $elapsed -lt 60 ]; then time_str=\"${elapsed}s\"; elif [ $elapsed -lt 3600 ]; then time_str=\"$((elapsed/60))m $((elapsed%60))s\"; else time_str=\"$((elapsed/3600))h $(((elapsed%3600)/60))m\"; fi; else time_str=\"--\"; fi; cost=$(echo \"scale=4; $total_in * 3 / 1000000 + $total_out * 15 / 1000000\" | bc); printf \"\\033[2m[\\033[0m\\033[36m%s\\033[0m\\033[2m | Context: \\033[0m\\033[33m%s%%\\033[0m\\033[2m | In: \\033[0m\\033[34m%d\\033[0m\\033[2m | Out: \\033[0m\\033[34m%d\\033[0m\\033[2m | Time: \\033[0m\\033[32m%s\\033[0m\\033[2m | Cost: \\033[0m\\033[35m$%.4f\\033[0m\\033[2m]\\033[0m\" \"$model\" \"$used_pct\" \"$total_in\" \"$total_out\" \"$time_str\" \"$cost\""
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-context.sh"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [
