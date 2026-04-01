@@ -18,8 +18,14 @@ if [ -d "$DEST" ]; then
         exit 1
     fi
     echo "claude-kb already cloned"
-    exit 0
+else
+    git clone "$REPO" "$DEST"
+    echo "claude-kb repo cloned to $DEST"
 fi
 
-git clone "$REPO" "$DEST"
-echo "claude-kb repo cloned to $DEST"
+# Run setup.sh if it exists
+if [ -f "$DEST/setup.sh" ]; then
+    echo "Running claude-kb setup.sh..."
+    (cd "$DEST" && bash setup.sh)
+    echo "claude-kb setup complete"
+fi

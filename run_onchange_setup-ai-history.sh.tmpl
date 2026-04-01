@@ -18,8 +18,14 @@ if [ -d "$DEST" ]; then
         exit 1
     fi
     echo "ai-history already cloned"
-    exit 0
+else
+    git clone "$REPO" "$DEST"
+    echo "ai-history repo cloned to $DEST"
 fi
 
-git clone "$REPO" "$DEST"
-echo "ai-history repo cloned to $DEST"
+# Run setup.sh if it exists
+if [ -f "$DEST/setup.sh" ]; then
+    echo "Running ai-history setup.sh..."
+    (cd "$DEST" && bash setup.sh)
+    echo "ai-history setup complete"
+fi
