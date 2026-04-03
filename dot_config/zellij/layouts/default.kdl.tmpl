@@ -4,7 +4,7 @@ layout {
     }
 
     pane size=1 borderless=true {
-        plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
+        plugin location="file:{{ .chezmoi.homeDir }}/.config/zellij/plugins/zjstatus.wasm" {
             // Catppuccin Mocha
             // base=#1e1e2e surface0=#313244 surface1=#45475a surface2=#585b70
             // text=#cdd6f4 subtext1=#bac2de overlay1=#7f849c
