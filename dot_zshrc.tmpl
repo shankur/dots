@@ -76,6 +76,29 @@ alias ts='tmux switch-client -t'
 alias tw='tmux list-windows'
 alias tp='tmux list-panes'
 
+# Sync AI knowledge repos (ai-history + claude-kb)
+sync-ai() {
+    local failed=0
+    for repo in ~/ai-history ~/claude-kb; do
+        [[ -d "$repo/.git" ]] || continue
+        local name=$(basename "$repo")
+        echo "--- $name ---"
+        git -C "$repo" add -A
+        if git -C "$repo" diff --cached --quiet; then
+            echo "nothing to commit"
+            continue
+        fi
+        local msg
+        msg=$(git -C "$repo" diff --cached --stat | claude -p \
+            "Write a short git commit message (1 line, no quotes) summarizing these changes to my $name repo. Just the message, nothing else." 2>/dev/null) \
+            || msg="sync $(date +%Y-%m-%d/%H:%M)"
+        echo "commit: $msg"
+        git -C "$repo" commit -m "$msg" && \
+        git -C "$repo" push || { echo "FAILED: $repo"; failed=1; }
+    done
+    return $failed
+}
+
 # Modern CLI Tools - Using functions instead of aliases for better completion
 # Unalias any existing aliases that conflict with our functions
 for cmd in ls grep find; do
