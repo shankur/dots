@@ -157,27 +157,6 @@ keybinds clear-defaults=true {
         }
     }
     shared_among "normal" "locked" {
-        // harpoon: quick-jump between panes
-        bind "Alt a" {
-            LaunchOrFocusPlugin "harpoon" {
-                floating true
-                move_to_focused_tab true
-            }
-        }
-        // room: session switcher
-        bind "Alt s" {
-            LaunchOrFocusPlugin "room" {
-                floating true
-                move_to_focused_tab true
-            }
-        }
-        // forgot: keybinding reference
-        bind "Alt ?" {
-            LaunchOrFocusPlugin "forgot" {
-                floating true
-                move_to_focused_tab true
-            }
-        }
         bind "Alt left" { MoveFocusOrTab "left"; }
         bind "Alt down" { MoveFocus "down"; }
         bind "Alt up" { MoveFocus "up"; }
@@ -276,9 +255,6 @@ plugins {
     welcome-screen location="zellij:session-manager" {
         welcome_screen true
     }
-    harpoon    location="file:{{ .chezmoi.homeDir }}/.config/zellij/plugins/harpoon.wasm"
-    room       location="file:{{ .chezmoi.homeDir }}/.config/zellij/plugins/room.wasm"
-    forgot     location="file:{{ .chezmoi.homeDir }}/.config/zellij/plugins/zellij-forgot.wasm"
 }
 
 // Plugins to load in the background when a new session starts
@@ -327,7 +303,7 @@ default_mode "locked"
 // The name of the default layout to load on startup
 // Default: "default"
 // 
-default_layout "default"
+default_layout "compact"
  
 // The folder in which Zellij will look for layouts
 // (Requires restart)
