@@ -9,16 +9,9 @@ mkdir -p "$PLUGINS_DIR"
 
 echo "Installing Zellij plugins..."
 
-declare -A PLUGINS=(
-    ["zjstatus.wasm"]="https://github.com/dj95/zjstatus/releases/latest/download/zjstatus.wasm"
-    ["harpoon.wasm"]="https://github.com/Nacho114/harpoon/releases/latest/download/harpoon.wasm"
-    ["room.wasm"]="https://github.com/rvcas/room/releases/latest/download/room.wasm"
-    ["zellij-forgot.wasm"]="https://github.com/karimould/zellij-forgot/releases/latest/download/zellij_forgot.wasm"
-)
-
-for plugin in "${!PLUGINS[@]}"; do
-    echo "  Downloading $plugin..."
-    curl -fsSL -o "$PLUGINS_DIR/$plugin" "${PLUGINS[$plugin]}"
-done
+curl -fsSL -o "$PLUGINS_DIR/zjstatus.wasm"      "https://github.com/dj95/zjstatus/releases/latest/download/zjstatus.wasm"
+curl -fsSL -o "$PLUGINS_DIR/harpoon.wasm"       "https://github.com/Nacho114/harpoon/releases/latest/download/harpoon.wasm"
+curl -fsSL -o "$PLUGINS_DIR/room.wasm"          "https://github.com/rvcas/room/releases/latest/download/room.wasm"
+curl -fsSL -o "$PLUGINS_DIR/zellij-forgot.wasm" "https://github.com/karimould/zellij-forgot/releases/latest/download/zellij_forgot.wasm"
 
 echo "Zellij plugins installed successfully"
