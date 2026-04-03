@@ -7,8 +7,8 @@ keybinds {
 
 theme "catppuccin-mocha"
 default_mode "locked"
-default_layout "compact"
-pane_frames false
+default_layout "default"
+pane_frames true
 show_startup_tips false
 show_release_notes false
 on_force_close "quit"
