@@ -6,7 +6,7 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 export PATH=$HOME/.local/bin:$PATH
 
 # Source credential/env files if they exist
-for f in ~/.awscredentials ~/.jenkinstoken ~/.atlassian ~/.condarc ~/.snowflaketoken ~/.ghtoken; do
+for f in ~/.awscredentials ~/.jenkinstoken ~/.atlassian ~/.snowflaketoken ~/.ghtoken; do
     [ -f "$f" ] && source "$f"
 done
 
