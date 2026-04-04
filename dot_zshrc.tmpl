@@ -249,6 +249,11 @@ if command -v zellij &>/dev/null; then
     fpath=(~/.zsh/completions $fpath)
 fi
 
+# Inside zellij: make 'exit' detach instead of killing the session
+if [[ -n "$ZELLIJ" ]]; then
+    alias exit='zellij action detach'
+fi
+
 # Auto-attach to Zellij on SSH with remote theme
 if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$ZELLIJ" ]] && command -v zellij &>/dev/null; then
     export ZELLIJ_CONFIG_DIR="$HOME/.config/zellij-remote"
