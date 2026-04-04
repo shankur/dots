@@ -4,7 +4,7 @@
 
 -- Open Claude Code in a Zellij floating pane
 vim.keymap.set('n', '<F1>', function()
-  vim.fn.system('zellij action new-pane --floating -- claude')
+  vim.fn.system('zellij action new-pane --direction right -- claude')
 end, { desc = 'Open Claude Code' })
 
 -- Disable the intro/welcome screen
