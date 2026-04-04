@@ -22,6 +22,9 @@ done
 [ -f ~/.config/fzf/completion.zsh ] && source ~/.config/fzf/completion.zsh
 {{- end }}
 
+# Add custom completions to fpath before compinit
+fpath=(~/.zsh/completions $fpath)
+
 # Initialize completion system
 autoload -Uz compinit
 compinit

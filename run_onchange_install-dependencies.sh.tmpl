@@ -177,6 +177,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
             git clone https://github.com/Aloxaf/fzf-tab ~/.config/fzf-tab
         fi
 
+        # Install eza zsh completions
+        mkdir -p ~/.zsh/completions
+        curl -sSfL -o ~/.zsh/completions/_eza \
+            "https://raw.githubusercontent.com/eza-community/eza/main/completions/zsh/_eza"
+
         # Install Rust if not present (for eza and other cargo tools)
         if ! command_exists cargo; then
             echo "🦀 Installing Rust..."
