@@ -3,10 +3,10 @@ return {
   lazy = true,
   event = "VeryLazy",
   keys = {
-    { "<A-h>", "<cmd>ZellijNavigateLeftWrapped<cr>",  desc = "Navigate left (Neovim/Zellij)" },
-    { "<A-j>", "<cmd>ZellijNavigateDownWrapped<cr>",  desc = "Navigate down (Neovim/Zellij)" },
-    { "<A-k>", "<cmd>ZellijNavigateUpWrapped<cr>",    desc = "Navigate up (Neovim/Zellij)" },
-    { "<A-l>", "<cmd>ZellijNavigateRightWrapped<cr>", desc = "Navigate right (Neovim/Zellij)" },
+    { "<A-h>", "<cmd>ZellijNavigateLeft<cr>",  desc = "Navigate left (Neovim/Zellij)" },
+    { "<A-j>", "<cmd>ZellijNavigateDown<cr>",  desc = "Navigate down (Neovim/Zellij)" },
+    { "<A-k>", "<cmd>ZellijNavigateUp<cr>",    desc = "Navigate up (Neovim/Zellij)" },
+    { "<A-l>", "<cmd>ZellijNavigateRight<cr>", desc = "Navigate right (Neovim/Zellij)" },
   },
   opts = {},
 }
