@@ -19,7 +19,10 @@ if [ -d "$DEST" ]; then
     fi
     echo "claude-kb already cloned"
 else
-    git clone "$REPO" "$DEST"
+    if ! git clone "$REPO" "$DEST" 2>&1; then
+        echo "WARNING: Could not clone claude-kb repo (no SSH keys or network access?). Skipping."
+        exit 0
+    fi
     echo "claude-kb repo cloned to $DEST"
 fi
 

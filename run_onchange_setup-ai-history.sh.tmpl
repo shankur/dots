@@ -19,7 +19,10 @@ if [ -d "$DEST" ]; then
     fi
     echo "ai-history already cloned"
 else
-    git clone "$REPO" "$DEST"
+    if ! git clone "$REPO" "$DEST" 2>&1; then
+        echo "WARNING: Could not clone ai-history repo (no SSH keys or network access?). Skipping."
+        exit 0
+    fi
     echo "ai-history repo cloned to $DEST"
 fi
 
