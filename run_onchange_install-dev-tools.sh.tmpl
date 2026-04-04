@@ -23,6 +23,8 @@ brew install git-extras starship zellij
 
 echo "✅ macOS tools installed via Homebrew"
 
+mkdir -p ~/.local/bin
+
 {{- else if or (eq .chezmoi.osRelease.id "amzn") (eq .chezmoi.osRelease.id "rhel") (eq .chezmoi.osRelease.id "centos") }}
 
 # Amazon Linux / RHEL / CentOS
@@ -56,14 +58,14 @@ fi
 
 # Install eza (modern ls replacement)
 echo "Installing eza..."
-curl -sSL https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz | sudo tar xz -C /usr/local/bin
+curl -sSL "https://github.com/eza-community/eza/releases/latest/download/eza_$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
 
 # Install ripgrep
 if ! sudo $PKG_MGR install -y ripgrep 2>/dev/null; then
     echo "Installing ripgrep from GitHub..."
     curl -LO https://github.com/BurntSushi/ripgrep/releases/latest/download/ripgrep-14.1.0-x86_64-unknown-linux-musl.tar.gz
     tar xf ripgrep-*.tar.gz
-    sudo cp ripgrep-*/rg /usr/local/bin/
+    cp ripgrep-*/rg ~/.local/bin/
     rm -rf ripgrep-*
 fi
 
@@ -71,10 +73,10 @@ fi
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 
 # Install starship
-curl -sSfL https://starship.rs/install.sh | sh -s -- --yes
+curl -sSfL https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin
 
 # Install zellij
-curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$(uname -m)-unknown-linux-musl.tar.gz" | sudo tar xz -C /usr/local/bin
+curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
 
 # Install zsh plugins
 sudo $PKG_MGR install -y zsh
@@ -84,6 +86,8 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/cust
 echo "✅ Amazon Linux/RHEL tools installed"
 
 {{- else if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") }}
+
+mkdir -p ~/.local/bin
 
 # Ubuntu/Debian
 echo "📦 Installing via apt for Ubuntu/Debian..."
@@ -99,16 +103,16 @@ sudo apt install -y fd-find ripgrep zsh
 
 # Install eza
 echo "Installing eza..."
-curl -sSL https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz | sudo tar xz -C /usr/local/bin
+curl -sSL "https://github.com/eza-community/eza/releases/latest/download/eza_$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
 
 # Install zoxide
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 
 # Install starship
-curl -sSfL https://starship.rs/install.sh | sh -s -- --yes
+curl -sSfL https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin
 
 # Install zellij
-curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$(uname -m)-unknown-linux-musl.tar.gz" | sudo tar xz -C /usr/local/bin
+curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
 
 # Install zsh plugins
 sudo apt install -y zsh-autosuggestions zsh-syntax-highlighting
