@@ -188,6 +188,8 @@ fi
 # Ensure TAB completion works properly
 bindkey '^I' expand-or-complete
 bindkey '^[[Z' reverse-menu-complete
+bindkey '^?' backward-delete-char
+bindkey '^H' backward-delete-char
 
 # Zoxide - Smart directory jumping (replaces cd command)
 if command -v zoxide &> /dev/null; then
