@@ -236,6 +236,12 @@ fi
 
 export DISABLE_AUTOUPDATER=1
 
+# Zellij
+alias zj="zellij"
+if command -v zellij &>/dev/null; then
+    eval "$(zellij setup --generate-completion zsh)"
+fi
+
 # Auto-attach to Zellij on SSH
 if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$ZELLIJ" ]] && command -v zellij &>/dev/null; then
     zellij attach --create default
