@@ -244,7 +244,8 @@ if command -v zellij &>/dev/null; then
     fpath=(~/.zsh/completions $fpath)
 fi
 
-# Auto-attach to Zellij on SSH
+# Auto-attach to Zellij on SSH with remote theme
 if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$ZELLIJ" ]] && command -v zellij &>/dev/null; then
+    export ZELLIJ_CONFIG_DIR="$HOME/.config/zellij-remote"
     zellij attach --create default
 fi

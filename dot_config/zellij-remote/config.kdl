@@ -1,0 +1,10 @@
+theme "catppuccin-frappe"
+
+keybinds {
+    locked {
+        bind "Alt h" { MoveFocus "left"; }
+        bind "Alt j" { MoveFocus "down"; }
+        bind "Alt k" { MoveFocus "up"; }
+        bind "Alt l" { MoveFocus "right"; }
+    }
+}
