@@ -22,6 +22,9 @@ for variant in "Latte" "Frappe" "Macchiato" "Mocha"; do
 done
 
 echo "Rebuilding bat cache..."
-bat cache --build
+# Ubuntu installs bat as 'batcat'; use whichever is available
+BAT_CMD="bat"
+command -v bat &>/dev/null || BAT_CMD="batcat"
+$BAT_CMD cache --build
 
 echo "Catppuccin themes for bat installed successfully"

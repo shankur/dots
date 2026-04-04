@@ -151,6 +151,8 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         install_if_missing fd fd-find || PACKAGES="$PACKAGES fd-find"
         install_if_missing rg ripgrep || PACKAGES="$PACKAGES ripgrep"
         install_if_missing bat || PACKAGES="$PACKAGES bat"
+        # Build dependencies for cargo-installed tools (git-delta, eza, etc.)
+        PACKAGES="$PACKAGES zlib1g-dev pkg-config libssl-dev"
 
         if [ -n "$PACKAGES" ]; then
             echo "📦 Installing missing packages:$PACKAGES"

@@ -115,7 +115,7 @@ ll() { eza -l --color=always --group-directories-first --icons "$@" }
 la() { eza -la --color=always --group-directories-first --icons "$@" }
 lt() { eza -T --color=always --group-directories-first --icons "$@" }
 l.() { eza -a "$@" | command grep -E "^\." }
-find() { fd "$@" }
+find() { (command -v fd &>/dev/null && fd "$@") || (command -v fdfind &>/dev/null && fdfind "$@") || command find "$@" }
 grep() { command rg "$@" }
 # zoxide: handled by zoxide init below
 
