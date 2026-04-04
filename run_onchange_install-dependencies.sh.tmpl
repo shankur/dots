@@ -162,6 +162,16 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
         install_if_missing zellij || curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$(uname -m)-unknown-linux-musl.tar.gz" | sudo tar xz -C /usr/local/bin
 
+        # Install fzf shell integration scripts (not bundled in Ubuntu's fzf package)
+        FZF_SHELL_DIR="$HOME/.config/fzf"
+        mkdir -p "$FZF_SHELL_DIR"
+        if [ ! -f "$FZF_SHELL_DIR/completion.zsh" ]; then
+            curl -sSfL -o "$FZF_SHELL_DIR/completion.zsh" \
+                "https://raw.githubusercontent.com/junegunn/fzf/master/shell/completion.zsh"
+            curl -sSfL -o "$FZF_SHELL_DIR/key-bindings.zsh" \
+                "https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh"
+        fi
+
         # Install Rust if not present (for eza and other cargo tools)
         if ! command_exists cargo; then
             echo "🦀 Installing Rust..."
