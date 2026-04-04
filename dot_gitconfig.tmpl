@@ -241,15 +241,17 @@
     # Restore archived branch
     unarchive = "!f() { git checkout -b $1 archive/$1 && git tag -d archive/$1; }; f"
 
-# URL shortcuts for common Git hosting services
+# URL shortcuts for common Git hosting services (only when SSH keys are present)
+{{ if or (stat (joinPath .chezmoi.homeDir ".ssh/id_ed25519")) (stat (joinPath .chezmoi.homeDir ".ssh/id_rsa")) -}}
 [url "git@github.com:"]
 	insteadof = https://github.com/
-    
+
 [url "git@gitlab.com:"]
     insteadOf = https://gitlab.com/
-    
+
 [url "git@bitbucket.org:"]
     insteadOf = https://bitbucket.org/
+{{ end -}}
 
 # Include local config if it exists (for machine-specific settings)
 [include]
