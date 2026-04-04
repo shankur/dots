@@ -15,7 +15,14 @@ for f in ~/.awscredentials ~/.jenkinstoken ~/.atlassian ~/.snowflaketoken ~/.ght
     [ -f "$f" ] && source "$f"
 done
 
-# Initialize completion system first
+# fzf completion must be loaded before compinit
+{{- if eq .chezmoi.os "darwin" }}
+[[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
+{{- else }}
+[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
+{{- end }}
+
+# Initialize completion system
 autoload -Uz compinit
 compinit
 
@@ -223,12 +230,9 @@ elif [[ -f /usr/local/share/git-extras/git-extras-completion.zsh ]]; then
 fi
 {{- end }}
 
-# fzf - Fuzzy finder shell integration
-{{- if eq .chezmoi.os "darwin" }}
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-{{- else }}
+# fzf key bindings (completion already sourced above before compinit)
+{{- if ne .chezmoi.os "darwin" }}
 [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
 {{- end }}
 
 # Starship Prompt
