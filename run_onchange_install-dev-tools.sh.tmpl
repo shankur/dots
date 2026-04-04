@@ -58,7 +58,10 @@ fi
 
 # Install eza (modern ls replacement)
 echo "Installing eza..."
-curl -sSL "https://github.com/eza-community/eza/releases/latest/download/eza_$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
+ARCH=$(uname -m)
+EZA_VARIANT="${ARCH}-unknown-linux-musl"
+[[ "$ARCH" == "aarch64" ]] && EZA_VARIANT="aarch64-unknown-linux-gnu"
+curl -sSL "https://github.com/eza-community/eza/releases/latest/download/eza_${EZA_VARIANT}.tar.gz" | tar xz -C ~/.local/bin
 
 # Install ripgrep
 if ! sudo $PKG_MGR install -y ripgrep 2>/dev/null; then
@@ -103,7 +106,10 @@ sudo apt install -y fd-find ripgrep zsh
 
 # Install eza
 echo "Installing eza..."
-curl -sSL "https://github.com/eza-community/eza/releases/latest/download/eza_$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
+ARCH=$(uname -m)
+EZA_VARIANT="${ARCH}-unknown-linux-musl"
+[[ "$ARCH" == "aarch64" ]] && EZA_VARIANT="aarch64-unknown-linux-gnu"
+curl -sSL "https://github.com/eza-community/eza/releases/latest/download/eza_${EZA_VARIANT}.tar.gz" | tar xz -C ~/.local/bin
 
 # Install zoxide
 curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
