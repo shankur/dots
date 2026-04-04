@@ -172,6 +172,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
                 "https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh"
         fi
 
+        # Install fzf-tab (fzf-powered zsh completion menu)
+        if [ ! -d "$HOME/.config/fzf-tab" ]; then
+            git clone https://github.com/Aloxaf/fzf-tab ~/.config/fzf-tab
+        fi
+
         # Install Rust if not present (for eza and other cargo tools)
         if ! command_exists cargo; then
             echo "🦀 Installing Rust..."

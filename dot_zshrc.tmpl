@@ -178,6 +178,9 @@ run_split() {
 # Basic completion setup (bypassing zplug for now)
 
 {{/* Cross-platform zsh plugins */}}
+# fzf-tab: replace zsh completion menu with fzf (must be after compinit, before other plugins)
+[ -f ~/.config/fzf-tab/fzf-tab.plugin.zsh ] && source ~/.config/fzf-tab/fzf-tab.plugin.zsh
+
 # Basic autosuggestions and syntax highlighting (if available)
 {{- if eq .chezmoi.os "darwin" }}
 if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
