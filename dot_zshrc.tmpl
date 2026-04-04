@@ -239,7 +239,9 @@ export DISABLE_AUTOUPDATER=1
 # Zellij
 alias zj="zellij"
 if command -v zellij &>/dev/null; then
-    eval "$(zellij setup --generate-completion zsh)"
+    mkdir -p ~/.zsh/completions
+    zellij setup --generate-completion zsh > ~/.zsh/completions/_zellij
+    fpath=(~/.zsh/completions $fpath)
 fi
 
 # Auto-attach to Zellij on SSH
