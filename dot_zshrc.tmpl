@@ -174,15 +174,6 @@ fi
 if [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
   source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
-{{- else }}
-# Linux: autosuggestions only (syntax-highlighting causes display glitches over SSH)
-if [[ -f ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-elif [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-elif [[ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-fi
 {{- end }}
 
 # Ensure TAB completion works properly
@@ -190,6 +181,7 @@ bindkey '^I' expand-or-complete
 bindkey '^[[Z' reverse-menu-complete
 bindkey '^?' backward-delete-char
 bindkey '^H' backward-delete-char
+bindkey '^L' clear-screen
 
 # Zoxide - Smart directory jumping (replaces cd command)
 if command -v zoxide &> /dev/null; then
