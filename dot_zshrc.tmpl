@@ -218,9 +218,10 @@ bindkey '^?' backward-delete-char
 bindkey '^H' backward-delete-char
 bindkey '^L' clear-screen
 
-# Zoxide - Smart directory jumping (replaces cd command)
+# Zoxide - Smart directory jumping (replaces cd command, also available as z)
 if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh --cmd cd)"
+    alias z='cd'
 fi
 
 {{- /* Git-extras completions - cross-platform */ -}}
