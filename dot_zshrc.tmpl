@@ -121,8 +121,8 @@ sync-ai() {
 
 # Modern CLI Tools
 alias ls='eza --color=always --group-directories-first --icons'
-compdef _eza ls ll la lt 2>/dev/null
-compdef _rg grep 2>/dev/null
+# Complete aliases as their target command
+setopt COMPLETE_ALIASES
 alias ll='eza -l --color=always --group-directories-first --icons'
 alias la='eza -la --color=always --group-directories-first --icons'
 alias lt='eza -T --color=always --group-directories-first --icons'
