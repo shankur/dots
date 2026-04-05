@@ -61,6 +61,14 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         brew install $BREW_PACKAGES
     fi
 
+    # fzf-tab and eza completions (macOS)
+    if [ ! -d "$HOME/.config/fzf-tab" ]; then
+        git clone https://github.com/Aloxaf/fzf-tab ~/.config/fzf-tab
+    fi
+    mkdir -p ~/.zsh/completions
+    curl -sSfL -o ~/.zsh/completions/_eza \
+        "https://raw.githubusercontent.com/eza-community/eza/main/completions/zsh/_eza"
+
     # Install Sheldon (zsh plugin manager) via cargo
     if command_exists cargo; then
         if ! command_exists sheldon; then
@@ -177,10 +185,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
             git clone https://github.com/Aloxaf/fzf-tab ~/.config/fzf-tab
         fi
 
-        # Install eza zsh completions
+        # Install zsh completions for eza and ripgrep
         mkdir -p ~/.zsh/completions
         curl -sSfL -o ~/.zsh/completions/_eza \
             "https://raw.githubusercontent.com/eza-community/eza/main/completions/zsh/_eza"
+        command -v rg &>/dev/null && rg --generate complete-zsh > ~/.zsh/completions/_rg
 
         # Install Rust if not present (for eza and other cargo tools)
         if ! command_exists cargo; then
