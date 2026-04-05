@@ -255,6 +255,7 @@ export DISABLE_AUTOUPDATER=1
 
 # Zellij
 alias zj="zellij"
+compdef _zellij zj 2>/dev/null
 if command -v zellij &>/dev/null; then
     mkdir -p ~/.zsh/completions
     zellij setup --generate-completion zsh > ~/.zsh/completions/_zellij
