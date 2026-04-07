@@ -3,6 +3,10 @@ show_release_notes false
 show_startup_tips false
 
 keybinds {
+    normal {
+        unbind "Ctrl a"
+        unbind "Ctrl e"
+    }
     locked {
         bind "Alt h" { MoveFocus "left"; }
         bind "Alt j" { MoveFocus "down"; }
