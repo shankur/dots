@@ -82,19 +82,6 @@ alias n='nvim'
 alias v='nvim'
 alias vim='nvim'
 
-# Tmux shortcuts
-alias t='tmux'
-alias ta='tmux attach-session'
-alias tat='tmux attach-session -t'
-alias tls='tmux list-sessions'
-alias tn='tmux new-session'
-alias tns='tmux new-session -s'
-alias tk='tmux kill-session'
-alias tks='tmux kill-session -t'
-alias td='tmux detach'
-alias ts='tmux switch-client -t'
-alias tw='tmux list-windows'
-alias tp='tmux list-panes'
 
 # Sync AI knowledge repos (ai-history + claude-kb)
 sync-ai() {
@@ -169,16 +156,6 @@ alias gpp15='g++'
 {{- end }}
 
 # Custom completion will be set up after fzf loads
-
-# Function to run command and display output in top pane
-run_split() {
-    if [[ -n $TMUX ]]; then
-        # Run command and send output to top pane
-        eval "$@" | tmux send-keys -t 0 "$(cat)" Enter
-    else
-        echo "❌ Not in tmux session. Run 'split' first."
-    fi
-}
 
 # Basic completion setup (bypassing zplug for now)
 

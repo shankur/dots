@@ -44,7 +44,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
     install_if_missing git || BREW_PACKAGES="$BREW_PACKAGES git"
     install_if_missing nvim neovim || BREW_PACKAGES="$BREW_PACKAGES neovim"
-    install_if_missing tmux || BREW_PACKAGES="$BREW_PACKAGES tmux"
     install_if_missing go || BREW_PACKAGES="$BREW_PACKAGES go"
     install_if_missing rustc rust || BREW_PACKAGES="$BREW_PACKAGES rust"
     install_if_missing node || BREW_PACKAGES="$BREW_PACKAGES node"
@@ -90,7 +89,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
         install_if_missing git || PACKAGES="$PACKAGES nixpkgs.git"
         install_if_missing nvim neovim || PACKAGES="$PACKAGES nixpkgs.neovim"
-        install_if_missing tmux || PACKAGES="$PACKAGES nixpkgs.tmux"
         install_if_missing go || PACKAGES="$PACKAGES nixpkgs.go"
         install_if_missing node nodejs || PACKAGES="$PACKAGES nixpkgs.nodejs"
         install_if_missing python3 || PACKAGES="$PACKAGES nixpkgs.python3"
@@ -147,7 +145,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
         install_if_missing git || PACKAGES="$PACKAGES git"
         install_if_missing nvim neovim || PACKAGES="$PACKAGES neovim"
-        install_if_missing tmux || PACKAGES="$PACKAGES tmux"
         install_if_missing go golang-go || PACKAGES="$PACKAGES golang-go"
         install_if_missing node nodejs || PACKAGES="$PACKAGES nodejs npm"
         install_if_missing python3 || PACKAGES="$PACKAGES python3 python3-pip"
@@ -209,7 +206,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
         install_if_missing git || PACKAGES="$PACKAGES git"
         install_if_missing nvim neovim || PACKAGES="$PACKAGES neovim"
-        install_if_missing tmux || PACKAGES="$PACKAGES tmux"
         install_if_missing go golang || PACKAGES="$PACKAGES golang"
         install_if_missing node nodejs || PACKAGES="$PACKAGES nodejs npm"
         install_if_missing python3 || PACKAGES="$PACKAGES python3 python3-pip"
@@ -289,14 +285,6 @@ echo "🤖 Setting up Claude CLI..."
 echo "📝 Setting up Neovim..."
 # AstroNvim will be restored from dotfiles
 
-# Install TPM (Tmux Plugin Manager)
-if [[ ! -d ~/.tmux/plugins/tpm ]]; then
-    echo "🔌 Installing TPM (Tmux Plugin Manager)..."
-    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-else
-    echo "✓ TPM already installed"
-fi
-
 # Final message
 echo ""
 echo "✅ Dependencies installed!"
@@ -305,6 +293,5 @@ echo "🤖 Remember to authenticate Claude CLI manually"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Restart your shell"
-echo "  2. Run 'tmux' then press Ctrl-a + I to install tmux plugins"
-echo "  3. Run 'nvim' to complete AstroNvim setup"
-echo "  4. Authenticate Claude CLI if needed"
+echo "  2. Run 'nvim' to complete AstroNvim setup"
+echo "  3. Authenticate Claude CLI if needed"
