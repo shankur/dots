@@ -2,10 +2,15 @@
 -- This is just pure lua so anything that doesn't
 -- fit in the normal config locations above can go here
 
--- Open Claude Code in a new Zellij tab
+-- Open Claude Code in a right split with terminal below
 vim.keymap.set('n', '<F1>', function()
-  vim.fn.system('zellij action new-tab --name "Claude" && sleep 0.1 && zellij run --close-on-exit --in-place -- claude')
-end, { desc = 'Open Claude Code' })
+  local cmd = table.concat({
+    'zellij action new-pane --direction right --name "Claude" --size "35%" -- claude',
+    'zellij action new-pane --direction down --name "Terminal" --size "40%"',
+    'zellij action focus-previous-pane',
+  }, ' && ')
+  vim.fn.system(cmd)
+end, { desc = 'Open Claude Code + Terminal layout' })
 
 -- Disable the intro/welcome screen
 vim.opt.shortmess:append("I")
