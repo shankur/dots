@@ -2,7 +2,7 @@
 {
 {{- if eq .profile "work" }}
 {{- if eq $claudeAuth "snowhouse" }}
-  "apiKeyHelper": "op read op://Private/Snowflake_PAT/password",
+  "apiKeyHelper": "op read {{ .claude_api_key_op_ref }}",
 {{- else }}
   "awsCredentialExport": "/opt/sf-cli/dist/sf ai claude auth",
   "enableAllProjectMcpServers": true,
