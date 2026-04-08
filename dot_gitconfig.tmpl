@@ -23,6 +23,9 @@
     
     # Enable parallel I/O for operations like `git diff`
     precomposeunicode = false
+{{- if eq .profile "work" }}
+	sshCommand = /usr/local/bin/sf __ssh
+{{- end }}
 
 [init]
     # Use 'main' as default branch name
@@ -295,3 +298,7 @@
     
 # [gpg]
 #     program = gpg
+{{- if eq .profile "work" }}
+[url "ssh://git@github.com/"]
+	insteadOf = https://github.com/
+{{ end -}}
