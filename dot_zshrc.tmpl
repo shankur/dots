@@ -253,6 +253,7 @@ fi
 # Auto-attach to Zellij on SSH with remote theme
 if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$ZELLIJ" ]] && command -v zellij &>/dev/null; then
     export ZELLIJ_CONFIG_DIR="$HOME/.config/zellij-remote"
+    [[ -d "$HOME/Snowflake/trunk" ]] && cd "$HOME/Snowflake/trunk"
     zellij attach --create "${(U)${$(hostname)%%-*}}"
     exit
 fi
