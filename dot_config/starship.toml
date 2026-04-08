@@ -225,3 +225,4 @@ crust = "#181926"
 ssh_only = true
 style = "bg:red fg:crust"
 format = "[ 󰒍 $hostname]($style)"
+trim_at = "-"
