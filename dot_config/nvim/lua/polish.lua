@@ -5,7 +5,7 @@
 -- Open Claude Code in a right split with terminal below
 vim.keymap.set('n', '<F1>', function()
   local cmd = table.concat({
-    'zellij action new-pane --direction right --name "Claude" -- claude',
+    'zellij action new-pane --direction right --close-on-exit --name "Claude" -- claude',
     'zellij action new-pane --direction down --name "Terminal"',
     'zellij action focus-previous-pane',
   }, ' && ')
