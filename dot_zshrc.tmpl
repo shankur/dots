@@ -246,12 +246,14 @@ fi
 # Inside zellij: make 'exit' detach instead of killing the session
 if [[ -n "$ZELLIJ" ]]; then
     alias exit='zellij action detach'
+    # Block SSH from within Zellij to prevent nested sessions
+    ssh() { echo "Detach from Zellij first (exit) before using SSH."; return 1; }
 fi
 
 # Auto-attach to Zellij on SSH with remote theme
 if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$ZELLIJ" ]] && command -v zellij &>/dev/null; then
     export ZELLIJ_CONFIG_DIR="$HOME/.config/zellij-remote"
-    zellij attach --create default
+    zellij attach --create "${$(hostname)%%-*}"
     exit
 fi
 
