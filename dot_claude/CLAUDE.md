@@ -2,6 +2,7 @@ You have a personal knowledge base at ~/claude-kb/. When answering questions abo
 
 - Snowhouse (Snowflake internal data warehouse): ~/claude-kb/knowledge-base/SNOWHOUSE_KB.md
 
-When creating new commands or skills, always place them in ~/claude-kb/:
+When creating new commands or skills:
+- General/portable skills: ~/.local/share/chezmoi/dot_claude/skills/<name>/SKILL.md (managed by chezmoi, deployed everywhere)
+- Project-specific skills: ~/claude-kb/skills/<name>/ (auto-symlinked into ~/.claude/skills/ when claude-kb exists)
 - Commands: ~/claude-kb/commands/<name>.md
-- Skills: ~/claude-kb/skills/<name>/
