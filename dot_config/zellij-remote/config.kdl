@@ -7,6 +7,7 @@ keybinds {
         unbind "Ctrl a"
         unbind "Ctrl e"
         unbind "Ctrl l"
+        unbind "Ctrl n"
         bind "Ctrl r" { SwitchToMode "resize"; }
     }
     locked {
