@@ -19,9 +19,14 @@ return {
       { "<leader>c5", "<cmd>ClaudeJump5<cr>", desc = "Jump to Session 5" },
     },
     opts = {
+{{- if ne .profile "work" }}
+      claude_args = { "--model", "claude-sonnet-4-6" },
+{{- end }}
       hosts = {
+{{- if hasKey . "claude_sessions" }}
 {{- range .claude_sessions.hosts }}
         { name = "{{ . }}", addr = "{{ $.claude_sessions.username }}@{{ . }}", cwd = "{{ $.claude_sessions.cwd }}", skip_permissions = true, model = "{{ $.claude_sessions.model }}" },
+{{- end }}
 {{- end }}
       },
     },
