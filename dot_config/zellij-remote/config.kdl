@@ -1,5 +1,4 @@
 theme "catppuccin-frappe"
-default_mode "locked"
 show_release_notes false
 show_startup_tips false
 
@@ -7,6 +6,8 @@ keybinds {
     normal {
         unbind "Ctrl a"
         unbind "Ctrl e"
+        unbind "Ctrl l"
+        bind "Ctrl r" { SwitchToMode "resize"; }
     }
     locked {
         bind "Alt h" { MoveFocus "left"; }
