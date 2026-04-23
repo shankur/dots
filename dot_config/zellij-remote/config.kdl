@@ -9,6 +9,7 @@ keybinds {
         unbind "Ctrl l"
         unbind "Ctrl n"
         bind "Ctrl r" { SwitchToMode "resize"; }
+        bind "Ctrl f" { ToggleFocusFullscreen; }
     }
     locked {
         bind "Alt h" { MoveFocus "left"; }
