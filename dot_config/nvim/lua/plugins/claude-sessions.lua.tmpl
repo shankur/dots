@@ -1,0 +1,28 @@
+{{- if eq .chezmoi.os "darwin" }}
+-- Claude Sessions Manager
+return {
+  {
+    dir = "~/Repositories/multi-claude.nvim",
+    cmd = { "ClaudeSessions", "ClaudeNew", "ClaudeClose", "ClaudeNext", "ClaudePrev", "ClaudeList", "ClaudeClean", "ClaudeDiscover" },
+    keys = {
+      { "<leader>cn", "<cmd>ClaudeNew<cr>", desc = "New Claude Session" },
+      { "<leader>cN", "<cmd>ClaudeNext<cr>", desc = "Next Claude Session" },
+      { "<leader>cP", "<cmd>ClaudePrev<cr>", desc = "Prev Claude Session" },
+      { "<leader>cc", "<cmd>ClaudeDiscover<cr>", desc = "Discover Remote Sessions" },
+    },
+    opts = {
+      hosts = {
+{{- range .claude_sessions.hosts }}
+        { name = "{{ . }}", addr = "{{ $.claude_sessions.username }}@{{ . }}", cwd = "{{ $.claude_sessions.cwd }}", skip_permissions = true, model = "{{ $.claude_sessions.model }}" },
+{{- end }}
+      },
+    },
+    config = function(_, opts)
+      require("claude-sessions").setup(opts)
+    end,
+  },
+}
+{{- else }}
+-- Claude Sessions Manager (disabled on remote servers)
+return {}
+{{- end }}

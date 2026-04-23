@@ -4,3 +4,8 @@
     email = "{{ promptStringOnce . "email" "Your email" }}"
     ai_history_repo = "{{ promptStringOnce . "ai_history_repo" "AI history git repo URL" }}"
     claude_kb_repo = "{{ promptStringOnce . "claude_kb_repo" "Claude KB plugin git repo URL (leave empty to skip)" }}"
+
+[data.claude_sessions]
+    username = "{{ promptStringOnce . "claude_sessions.username" "SSH username for remote Claude sessions" }}"
+    model = "{{ promptStringOnce . "claude_sessions.model" "Claude model ID for remote sessions" }}"
+    cwd = "{{ promptStringOnce . "claude_sessions.cwd" "Default working directory on remote servers" }}"
