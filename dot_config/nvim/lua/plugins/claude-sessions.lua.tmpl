@@ -3,13 +3,19 @@
 return {
   {
     "shankur/multi-claude.nvim",
-    cmd = { "ClaudeSessions", "ClaudeNew", "ClaudeClose", "ClaudeNext", "ClaudePrev", "ClaudeList", "ClaudeClean", "ClaudeDiscover" },
+    cmd = { "ClaudeSessions", "ClaudeNew", "ClaudeClose", "ClaudeNext", "ClaudePrev", "ClaudeList", "ClaudeClean", "ClaudeDiscover", "ClaudeJump", "ClaudeJump1", "ClaudeJump2", "ClaudeJump3", "ClaudeJump4", "ClaudeJump5" },
     keys = {
       { "<leader>cn", "<cmd>ClaudeNew<cr>", desc = "New Claude Session" },
       { "<leader>cN", "<cmd>ClaudeNext<cr>", desc = "Next Claude Session" },
       { "<leader>cP", "<cmd>ClaudePrev<cr>", desc = "Prev Claude Session" },
       { "<leader>cc", "<cmd>ClaudeDiscover<cr>", desc = "Discover Remote Sessions" },
       { "<leader>cx", "<cmd>ClaudeClean<cr>", desc = "Clean Claude Sessions" },
+      { "<leader>cj", "<cmd>ClaudeJump<cr>", desc = "Jump to Session" },
+      { "<leader>c1", "<cmd>ClaudeJump1<cr>", desc = "Jump to Session 1" },
+      { "<leader>c2", "<cmd>ClaudeJump2<cr>", desc = "Jump to Session 2" },
+      { "<leader>c3", "<cmd>ClaudeJump3<cr>", desc = "Jump to Session 3" },
+      { "<leader>c4", "<cmd>ClaudeJump4<cr>", desc = "Jump to Session 4" },
+      { "<leader>c5", "<cmd>ClaudeJump5<cr>", desc = "Jump to Session 5" },
     },
     opts = {
       hosts = {
