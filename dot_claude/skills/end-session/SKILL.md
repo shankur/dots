@@ -56,9 +56,9 @@ Write a concise session summary to the `~/ai-history` repository.
    - Potential next steps
    ```
 
-5. **Stage and commit** the file to the ai-history repo:
+5. **Stage, commit, and push** the file to the ai-history repo:
    ```
-   cd ~/ai-history && git add <file> && git commit -m "Add session <uuid>: <topic-slug>"
+   cd ~/ai-history && git add <file> && git commit -m "Add session <uuid>: <topic-slug>" && git push
    ```
 
 ## Writing Guidelines
