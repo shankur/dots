@@ -200,6 +200,7 @@ bindkey '^L' clear-screen
 
 # Zoxide - Smart directory jumping (replaces cd command, also available as z)
 if command -v zoxide &> /dev/null; then
+    export _ZO_DOCTOR=0
     eval "$(zoxide init zsh --cmd cd)"
     alias z='cd'
 fi
