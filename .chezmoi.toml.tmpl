@@ -4,3 +4,13 @@
     email = "{{ promptStringOnce . "email" "Your email" }}"
     ai_history_repo = "{{ promptStringOnce . "ai_history_repo" "AI history git repo URL" }}"
     claude_kb_repo = "{{ promptStringOnce . "claude_kb_repo" "Claude KB plugin git repo URL (leave empty to skip)" }}"
+{{- if hasKey . "claude_sessions" }}
+
+[data.claude_sessions]
+{{ .claude_sessions | toToml -}}
+{{- end }}
+{{- if hasKey . "snowdash" }}
+
+[data.snowdash]
+{{ .snowdash | toToml -}}
+{{- end }}
