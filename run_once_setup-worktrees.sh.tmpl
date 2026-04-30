@@ -1,0 +1,77 @@
+#!/bin/bash
+# Set up worktree-based development for the snowflake monorepo
+# layout: snowflake-base (actual repo), worktrees/<name> (checkouts), snowflake (mount point)
+# hash: v2
+{{ if ne .profile "work" }}
+echo "Skipping worktree setup (not work profile)"
+exit 0
+{{ end }}
+{{ if eq .chezmoi.os "darwin" }}
+echo "Skipping worktree setup (not a cloud workspace)"
+exit 0
+{{ end }}
+set -e
+
+BASE="/home/repo/snowflake-base"
+MOUNT="/home/repo/snowflake"
+WORKTREES="/home/repo/worktrees"
+
+SF_BASE="$HOME/sf-base"
+SF_MOUNT="$HOME/sf"
+SF_WORKTREES="$HOME/sf-worktrees"
+
+# Already set up?
+if [ -d "$BASE/.git" ] && [ -d "$WORKTREES" ]; then
+    echo "Worktree layout already in place"
+    exit 0
+fi
+
+# Only proceed if the original repo exists and hasn't been moved yet
+if [ ! -d "$MOUNT/.git" ]; then
+    echo "WARNING: $MOUNT/.git not found — cannot set up worktree layout. Skipping."
+    exit 0
+fi
+
+# Don't run if snowflake-base already exists (partial setup?)
+if [ -d "$BASE" ]; then
+    echo "WARNING: $BASE already exists but setup looks incomplete. Skipping to avoid data loss."
+    exit 0
+fi
+
+echo "Setting up worktree-based development layout..."
+
+# 1. Move the repo
+echo "Moving $MOUNT -> $BASE"
+mv "$MOUNT" "$BASE"
+
+# 2. Move sf to sf-base
+if [ -d "$SF_MOUNT" ]; then
+    echo "Moving $SF_MOUNT -> $SF_BASE"
+    mv "$SF_MOUNT" "$SF_BASE"
+else
+    mkdir -p "$SF_BASE"
+fi
+
+# 3. Create directories
+echo "Creating mount points and worktree directories"
+mkdir -p "$MOUNT"
+mkdir -p "$WORKTREES"
+mkdir -p "$SF_MOUNT"
+mkdir -p "$SF_WORKTREES"
+
+# 4. Bind mount base back so nothing breaks immediately
+echo "Bind-mounting base at $MOUNT and $SF_MOUNT"
+sudo mount --bind "$BASE" "$MOUNT"
+sudo mount --bind "$SF_BASE" "$SF_MOUNT"
+
+echo ""
+echo "Worktree layout ready:"
+echo "  Base repo:   $BASE"
+echo "  Base sf:     $SF_BASE"
+echo "  Worktrees:   $WORKTREES/<name>"
+echo "  SF worktrees: $SF_WORKTREES/<name>"
+echo "  Mount point: $MOUNT (currently mounted to base)"
+echo "  SF mount:    $SF_MOUNT (currently mounted to sf-base)"
+echo ""
+echo "Use 'worktree create <name>' to create a worktree"
+echo "Use 'worktree activate <name>' to bind-mount it for build/deploy"

@@ -1,0 +1,31 @@
+You have a personal knowledge base at ~/claude-kb/. When answering questions about internal tools, systems, or workflows, read the relevant knowledge base files from that directory.
+
+- Snowhouse (Snowflake internal data warehouse): ~/claude-kb/knowledge-base/SNOWHOUSE_KB.md
+
+When creating new commands or skills:
+- General/portable skills: ~/.local/share/chezmoi/dot_claude/skills/<name>/SKILL.md (managed by chezmoi, deployed everywhere)
+- Project-specific skills: ~/claude-kb/skills/<name>/ (auto-symlinked into ~/.claude/skills/ when claude-kb exists)
+- Commands: ~/claude-kb/commands/<name>.md
+{{ if and (eq .profile "work") (ne .chezmoi.os "darwin") }}
+# Snowflake Monorepo Workflow
+
+## Worktree-based development
+This repo uses bind-mount worktrees for parallel development. ALWAYS use the `worktree` CLI (a shell script at ~/.local/bin/worktree, on PATH):
+
+- `worktree create <name> [base]` — new worktree branch
+- `worktree activate <name>` — bind-mount for build/test
+- `worktree deactivate` — restore base repo
+- `worktree status` — check what's active
+- `worktree list` — list all worktrees
+- `worktree remove <name>` — remove a worktree
+- `worktree build <name> <bazel-args...>` — activate + build + deactivate
+
+## Rules
+- Never modify /home/repo/snowflake-base directly for feature work
+- Create a worktree for each task/branch
+- Activate before building, deactivate when done
+- The mount point /home/repo/snowflake is where builds happen
+- Each worktree has a paired ~/sf directory (build artifacts and logs)
+  - ~/sf-base — default artifacts, ~/sf-worktrees/<name> — per-worktree artifacts
+  - `activate` and `deactivate` swap both mounts together
+{{ end -}}

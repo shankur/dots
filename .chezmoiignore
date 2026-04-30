@@ -1,0 +1,4 @@
+{{- if eq .chezmoi.os "darwin" }}
+# Worktree tools are only for cloud workspaces (Linux)
+.local/bin/worktree
+{{- end }}

@@ -1,0 +1,229 @@
+#!/bin/bash
+# Manage snowflake monorepo worktrees with bind-mount activation for build/deploy/test
+#
+# Usage:
+#   worktree create <name> [base-branch]   Create a new worktree (default base: main)
+#   worktree activate <name>               Bind-mount worktree at /home/repo/snowflake
+#   worktree deactivate                    Unmount, restore base repo
+#   worktree status                        Show current mount and active worktree
+#   worktree list                          List all worktrees
+#   worktree remove <name>                 Remove a worktree
+#   worktree build <name> <bazel-args...>  Activate + bazel build + deactivate
+
+set -e
+
+BASE="/home/repo/snowflake-base"
+MOUNT="/home/repo/snowflake"
+WORKTREES="/home/repo/worktrees"
+
+SF_BASE="$HOME/sf-base"
+SF_MOUNT="$HOME/sf"
+SF_WORKTREES="$HOME/sf-worktrees"
+
+die() { echo "error: $*" >&2; exit 1; }
+
+# Check layout
+check_layout() {
+    [ -d "$BASE/.git" ] || die "Base repo not found at $BASE. Run 'chezmoi apply' first."
+    [ -d "$WORKTREES" ] || die "Worktrees directory not found at $WORKTREES. Run 'chezmoi apply' first."
+}
+
+# What's currently mounted?
+get_active() {
+    if mountpoint -q "$MOUNT" 2>/dev/null; then
+        findmnt -n -o SOURCE "$MOUNT" 2>/dev/null || echo "(mounted, source unknown)"
+    else
+        echo ""
+    fi
+}
+
+cmd_create() {
+    local name="$1"
+    local base="${2:-main}"
+    [ -n "$name" ] || die "Usage: worktree create <name> [base-branch]"
+    check_layout
+
+    local wt="$WORKTREES/$name"
+    [ ! -d "$wt" ] || die "Worktree already exists: $wt"
+
+    echo "Creating worktree '$name' from '$base'..."
+    cd "$BASE"
+    git worktree add "$wt" -b "$name" "$base"
+
+    # Create corresponding sf directory for build artifacts/logs
+    mkdir -p "$SF_WORKTREES/$name"
+    echo "Created sf directory: $SF_WORKTREES/$name"
+
+    echo ""
+    echo "Worktree created at: $wt"
+    echo "To activate for build: worktree activate $name"
+}
+
+cmd_activate() {
+    local name="$1"
+    [ -n "$name" ] || die "Usage: worktree activate <name>"
+    check_layout
+
+    local wt="$WORKTREES/$name"
+    [ -d "$wt" ] || die "Worktree not found: $wt"
+
+    # Ensure sf worktree dir exists
+    mkdir -p "$SF_WORKTREES/$name"
+
+    # Unmount current if mounted
+    if mountpoint -q "$MOUNT" 2>/dev/null; then
+        echo "Unmounting current bind mount..."
+        sudo umount "$MOUNT"
+    fi
+    if mountpoint -q "$SF_MOUNT" 2>/dev/null; then
+        sudo umount "$SF_MOUNT"
+    fi
+
+    echo "Activating worktree '$name'..."
+    sudo mount --bind "$wt" "$MOUNT"
+    sudo mount --bind "$SF_WORKTREES/$name" "$SF_MOUNT"
+    echo "Mounted: $wt -> $MOUNT"
+    echo "Mounted: $SF_WORKTREES/$name -> $SF_MOUNT"
+    echo ""
+    echo "Ready to build/deploy/test from /home/repo/snowflake"
+}
+
+cmd_deactivate() {
+    check_layout
+
+    if ! mountpoint -q "$MOUNT" 2>/dev/null; then
+        echo "Nothing is mounted at $MOUNT"
+        return
+    fi
+
+    echo "Unmounting $MOUNT..."
+    sudo umount "$MOUNT"
+    if mountpoint -q "$SF_MOUNT" 2>/dev/null; then
+        echo "Unmounting $SF_MOUNT..."
+        sudo umount "$SF_MOUNT"
+    fi
+
+    # Restore base repo and sf as default
+    echo "Restoring base mounts..."
+    sudo mount --bind "$BASE" "$MOUNT"
+    sudo mount --bind "$SF_BASE" "$SF_MOUNT"
+    echo "Restored: $BASE -> $MOUNT"
+    echo "Restored: $SF_BASE -> $SF_MOUNT"
+}
+
+cmd_status() {
+    check_layout
+
+    echo "Layout:"
+    echo "  Base repo:   $BASE"
+    echo "  Base sf:     $SF_BASE"
+    echo "  Worktrees:   $WORKTREES/"
+    echo "  SF worktrees: $SF_WORKTREES/"
+    echo "  Mount point: $MOUNT"
+    echo "  SF mount:    $SF_MOUNT"
+    echo ""
+
+    if mountpoint -q "$MOUNT" 2>/dev/null; then
+        local src
+        src=$(findmnt -n -o SOURCE "$MOUNT" 2>/dev/null)
+        echo "Active mount: $src -> $MOUNT"
+
+        if [ "$src" = "$BASE" ]; then
+            echo "  (base repo is active — no worktree activated)"
+        else
+            local name
+            name=$(basename "$src")
+            echo "  Worktree: $name"
+        fi
+    else
+        echo "Nothing mounted at $MOUNT"
+    fi
+
+    if mountpoint -q "$SF_MOUNT" 2>/dev/null; then
+        local sf_src
+        sf_src=$(findmnt -n -o SOURCE "$SF_MOUNT" 2>/dev/null)
+        echo "SF mount: $sf_src -> $SF_MOUNT"
+    fi
+}
+
+cmd_list() {
+    check_layout
+    echo "Worktrees:"
+    cd "$BASE"
+    git worktree list
+    echo ""
+
+    local active
+    active=$(get_active)
+    if [ -n "$active" ]; then
+        echo "Currently mounted: $active -> $MOUNT"
+    fi
+}
+
+cmd_remove() {
+    local name="$1"
+    [ -n "$name" ] || die "Usage: worktree remove <name>"
+    check_layout
+
+    local wt="$WORKTREES/$name"
+    [ -d "$wt" ] || die "Worktree not found: $wt"
+
+    # Check if this worktree is currently mounted
+    if mountpoint -q "$MOUNT" 2>/dev/null; then
+        local src
+        src=$(findmnt -n -o SOURCE "$MOUNT" 2>/dev/null)
+        if [ "$src" = "$wt" ]; then
+            echo "Worktree '$name' is currently active. Deactivating first..."
+            cmd_deactivate
+        fi
+    fi
+
+    echo "Removing worktree '$name'..."
+    cd "$BASE"
+    git worktree remove "$wt"
+
+    # Remove corresponding sf directory
+    if [ -d "$SF_WORKTREES/$name" ]; then
+        rm -rf "$SF_WORKTREES/$name"
+        echo "Removed sf directory: $SF_WORKTREES/$name"
+    fi
+
+    echo "Removed: $wt"
+}
+
+cmd_build() {
+    local name="$1"
+    [ -n "$name" ] || die "Usage: worktree build <name> <bazel-args...>"
+    shift
+
+    cmd_activate "$name"
+    echo ""
+    echo "Running: tools/bazel $*"
+    cd "$MOUNT"
+    tools/bazel "$@"
+}
+
+# Dispatch
+case "${1:-}" in
+    create)     shift; cmd_create "$@" ;;
+    activate)   shift; cmd_activate "$@" ;;
+    deactivate) shift; cmd_deactivate "$@" ;;
+    status)     shift; cmd_status "$@" ;;
+    list)       shift; cmd_list "$@" ;;
+    ls)         shift; cmd_list "$@" ;;
+    remove)     shift; cmd_remove "$@" ;;
+    rm)         shift; cmd_remove "$@" ;;
+    build)      shift; cmd_build "$@" ;;
+    *)
+        echo "Usage: worktree <command> [args]"
+        echo ""
+        echo "Commands:"
+        echo "  create <name> [base]   Create a new worktree (default base: main)"
+        echo "  activate <name>        Bind-mount worktree for build/deploy/test"
+        echo "  deactivate             Unmount worktree, restore base repo"
+        echo "  status                 Show current mount state"
+        echo "  list                   List all worktrees"
+        echo "  remove <name>          Remove a worktree"
+        echo "  build <name> <args>    Activate + bazel build + deactivate"
+        ;;
+esac
