@@ -275,6 +275,8 @@ fi
 {{- if eq .profile "work" }}
 
 eval "$(sf aliases)"
+export SNOWDASH_CACHE_FILE="$HOME/claude-kb/cache/snowtrail.json"
+alias claude='claude --dangerously-skip-permissions'
 {{ end -}}
 {{ if eq .chezmoi.os "darwin" }}
 # >>> conda initialize >>>

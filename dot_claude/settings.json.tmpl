@@ -47,5 +47,7 @@
   "enabledPlugins": {
     "swift-lsp@claude-plugins-official": true
   }
+{{- else if eq .profile "work" }},
+  "skipDangerousModePermissionPrompt": true
 {{- end }}
 }

@@ -25,7 +25,7 @@ return {
       hosts = {
 {{- if hasKey . "claude_sessions" }}
 {{- range .claude_sessions.hosts }}
-        { name = "{{ . }}", addr = "{{ $.claude_sessions.username }}@{{ . }}", cwd = "{{ $.claude_sessions.cwd }}", skip_permissions = true, model = "{{ $.claude_sessions.model }}" },
+        { name = "{{ . }}", addr = "{{ $.claude_sessions.username }}@{{ . }}", cwd = "{{ $.claude_sessions.cwd }}", model = "{{ $.claude_sessions.model }}" },
 {{- end }}
 {{- end }}
       },

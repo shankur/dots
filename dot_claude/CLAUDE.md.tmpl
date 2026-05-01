@@ -28,4 +28,23 @@ This repo uses bind-mount worktrees for parallel development. ALWAYS use the `wo
 - Each worktree has a paired ~/sf directory (build artifacts and logs)
   - ~/sf-base — default artifacts, ~/sf-worktrees/<name> — per-worktree artifacts
   - `activate` and `deactivate` swap both mounts together
+
+## Testing with Snowfort
+- For Snowfort tests, read and follow the skills under `/home/repo/snowflake/Snowfort/.claude/`
+- Use `snowsql -c reg` to run SQL directly against Snowflake after deploying changes
+
+## Deployment
+- Use `sf sut redeploy` to build and deploy local changes (builds both GS and XP)
+- Only use full DPO/parameter deploys if making fundamental changes to DPO or parameters
+- Always activate the worktree before deploying
+
+## Pull Requests
+- PRs MUST follow the format shown in: https://github.com/snowflake-eng/snowflake/pull/423950
+- ALWAYS include the Jira ticket number in the PR title (e.g. "SNOW-12345: ...")
+- If no Jira number is specified, ASK the user before committing/pushing
+- Never create a PR without a Jira number in the header
+
+## Parallel Agents
+- Use up to 5 parallel agents for all work (research, implementation, testing)
+- Prefer parallel execution whenever tasks are independent
 {{ end -}}
