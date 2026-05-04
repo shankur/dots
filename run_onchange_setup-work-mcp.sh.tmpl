@@ -1,0 +1,63 @@
+{{ if eq .profile "work" -}}
+#!/bin/bash
+# Setup Snowflake MCP servers for work profile
+# hash: {{ include "run_onchange_setup-work-mcp.sh.tmpl" | sha256sum }}
+
+set -e
+
+echo "🔧 Setting up Snowflake MCP servers..."
+
+# Check if sf command is available
+if ! command -v sf &> /dev/null; then
+    echo "⚠️  sf CLI not found, skipping MCP setup"
+    exit 0
+fi
+
+# Change to working directory
+{{- if hasKey . "claude_sessions" }}
+TRUNK_DIR="{{ .claude_sessions.cwd }}"
+{{- else }}
+TRUNK_DIR="$HOME/Snowflake/trunk"
+{{- end }}
+if [ ! -d "$TRUNK_DIR" ]; then
+    echo "⚠️  $TRUNK_DIR not found, skipping MCP setup"
+    exit 0
+fi
+
+cd "$TRUNK_DIR"
+
+# List of MCP tools to add via sf cli
+MCP_TOOLS=(
+    "confluence"
+    "jira"
+    "jira_wo"
+    "snowhouse"
+    "github"
+    "graphite"
+    "glean"
+    "jenkins"
+)
+
+for tool in "${MCP_TOOLS[@]}"; do
+    echo "  → Adding MCP server: $tool"
+    sf mcp add "$tool" 2>/dev/null || echo "    ⚠️  Failed to add $tool (may already exist)"
+done
+
+{{ if ne .chezmoi.os "darwin" -}}
+# Add jvm-debug-bridge MCP server (cloud workspaces only)
+MCP_JSON="$TRUNK_DIR/.mcp.json"
+if [ -f "$MCP_JSON" ]; then
+    if ! grep -q '"jvm-debug"' "$MCP_JSON" 2>/dev/null; then
+        echo "  → Adding MCP server: jvm-debug"
+        jq '.mcpServers["jvm-debug"] = {
+          "command": "java",
+          "args": ["--add-modules", "jdk.jdi", "-jar", "'"$TRUNK_DIR"'/Varia/jvm-debug-bridge/target/jvm-debug-bridge-1.0.0-SNAPSHOT.jar"]
+        }' "$MCP_JSON" > "$MCP_JSON.tmp" && mv "$MCP_JSON.tmp" "$MCP_JSON"
+    else
+        echo "  → jvm-debug already configured"
+    fi
+fi
+{{- end }}
+
+echo "✅ MCP servers configured"
+{{ end -}}
