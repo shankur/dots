@@ -20,6 +20,8 @@ SF_BASE="$HOME/sf-base"
 SF_MOUNT="$HOME/sf"
 SF_WORKTREES="$HOME/sf-worktrees"
 
+TRUNK="$HOME/Snowflake/trunk"
+
 die() { echo "error: $*" >&2; exit 1; }
 
 # Check layout
@@ -73,17 +75,22 @@ cmd_activate() {
     # Unmount current if mounted
     if mountpoint -q "$MOUNT" 2>/dev/null; then
         echo "Unmounting current bind mount..."
-        sudo umount "$MOUNT"
+        sudo umount -l "$MOUNT"
     fi
     if mountpoint -q "$SF_MOUNT" 2>/dev/null; then
-        sudo umount "$SF_MOUNT"
+        sudo umount -l "$SF_MOUNT"
+    fi
+    if mountpoint -q "$TRUNK" 2>/dev/null; then
+        sudo umount -l "$TRUNK"
     fi
 
     echo "Activating worktree '$name'..."
     sudo mount --bind "$wt" "$MOUNT"
     sudo mount --bind "$SF_WORKTREES/$name" "$SF_MOUNT"
+    sudo mount --bind "$wt" "$TRUNK"
     echo "Mounted: $wt -> $MOUNT"
     echo "Mounted: $SF_WORKTREES/$name -> $SF_MOUNT"
+    echo "Mounted: $wt -> $TRUNK"
     echo ""
     echo "Ready to build/deploy/test from /home/repo/snowflake"
 }
@@ -97,18 +104,24 @@ cmd_deactivate() {
     fi
 
     echo "Unmounting $MOUNT..."
-    sudo umount "$MOUNT"
+    sudo umount -l "$MOUNT"
     if mountpoint -q "$SF_MOUNT" 2>/dev/null; then
         echo "Unmounting $SF_MOUNT..."
-        sudo umount "$SF_MOUNT"
+        sudo umount -l "$SF_MOUNT"
+    fi
+    if mountpoint -q "$TRUNK" 2>/dev/null; then
+        echo "Unmounting $TRUNK..."
+        sudo umount -l "$TRUNK"
     fi
 
     # Restore base repo and sf as default
     echo "Restoring base mounts..."
     sudo mount --bind "$BASE" "$MOUNT"
     sudo mount --bind "$SF_BASE" "$SF_MOUNT"
+    sudo mount --bind "$BASE" "$TRUNK"
     echo "Restored: $BASE -> $MOUNT"
     echo "Restored: $SF_BASE -> $SF_MOUNT"
+    echo "Restored: $BASE -> $TRUNK"
 }
 
 cmd_status() {
@@ -121,6 +134,7 @@ cmd_status() {
     echo "  SF worktrees: $SF_WORKTREES/"
     echo "  Mount point: $MOUNT"
     echo "  SF mount:    $SF_MOUNT"
+    echo "  Trunk:       $TRUNK"
     echo ""
 
     if mountpoint -q "$MOUNT" 2>/dev/null; then
