@@ -3,9 +3,10 @@
 return {
   {
     "shankur/multi-claude.nvim",
-    cmd = { "ClaudeSessions", "ClaudeNew", "ClaudeClose", "ClaudeNext", "ClaudePrev", "ClaudeList", "ClaudeClean", "ClaudeDiscover", "ClaudeJump", "ClaudeJump1", "ClaudeJump2", "ClaudeJump3", "ClaudeJump4", "ClaudeJump5" },
+    cmd = { "ClaudeSessions", "ClaudeNew", "ClaudeResume", "ClaudeClose", "ClaudeNext", "ClaudePrev", "ClaudeList", "ClaudeClean", "ClaudeDiscover", "ClaudeJump", "ClaudeJump1", "ClaudeJump2", "ClaudeJump3", "ClaudeJump4", "ClaudeJump5" },
     keys = {
       { "<leader>cn", "<cmd>ClaudeNew<cr>", desc = "New Claude Session" },
+      { "<leader>cr", "<cmd>ClaudeResume<cr>", desc = "Resume Claude Session" },
       { "<leader>cN", "<cmd>ClaudeNext<cr>", desc = "Next Claude Session" },
       { "<leader>cP", "<cmd>ClaudePrev<cr>", desc = "Prev Claude Session" },
       { "<leader>cc", "<cmd>ClaudeDiscover<cr>", desc = "Discover Remote Sessions" },
@@ -22,6 +23,13 @@ return {
 {{- if ne .profile "work" }}
       claude_args = { "--model", "claude-sonnet-4-6" },
 {{- end }}
+      default_cwd = "~",
+      cwd_paths = {
+        "~",
+{{- if hasKey . "claude_sessions" }}
+        "{{ .claude_sessions.cwd }}",
+{{- end }}
+      },
       hosts = {
 {{- if hasKey . "claude_sessions" }}
 {{- range .claude_sessions.hosts }}
