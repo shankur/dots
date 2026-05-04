@@ -64,6 +64,12 @@ echo "Bind-mounting base at $MOUNT and $SF_MOUNT"
 sudo mount --bind "$BASE" "$MOUNT"
 sudo mount --bind "$SF_BASE" "$SF_MOUNT"
 
+# 5. Build jvm-debug-bridge MCP plugin from base
+if [ -d "$BASE/Varia/jvm-debug-bridge" ]; then
+    echo "Building jvm-debug-bridge MCP plugin..."
+    (cd "$BASE/Varia/jvm-debug-bridge" && mvn clean package -q)
+fi
+
 echo ""
 echo "Worktree layout ready:"
 echo "  Base repo:   $BASE"
