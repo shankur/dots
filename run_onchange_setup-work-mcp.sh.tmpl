@@ -41,5 +41,28 @@ for tool in "${MCP_TOOLS[@]}"; do
     sf __mcp add "$tool" 2>/dev/null || echo "    ⚠️  Failed to add $tool (may already exist)"
 done
 
+# Add jvm-debug-bridge MCP server (cloud workspaces only)
+{{- if ne .chezmoi.os "darwin" }}
+JVM_DEBUG_JAR="$HOME/Snowflake/trunk/Varia/jvm-debug-bridge/target/jvm-debug-bridge-1.0.0-SNAPSHOT.jar"
+if [ -f "$HOME/.mcp.json" ]; then
+    # Add jvm-debug server if not already present
+    if ! grep -q "jvm-debug" "$HOME/.mcp.json"; then
+        echo "  → Adding MCP server: jvm-debug"
+        TMP=$(mktemp)
+        python3 -c "
+import json
+with open('$HOME/.mcp.json') as f:
+    data = json.load(f)
+data['mcpServers']['jvm-debug'] = {
+    'command': 'java',
+    'args': ['--add-modules', 'jdk.jdi', '-jar', '$JVM_DEBUG_JAR']
+}
+with open('$TMP', 'w') as f:
+    json.dump(data, f, indent=2)
+" && mv "$TMP" "$HOME/.mcp.json"
+    fi
+fi
+{{- end }}
+
 echo "✅ MCP servers configured"
 {{ end -}}

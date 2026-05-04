@@ -96,6 +96,12 @@ cmd_activate() {
     direnv allow "$MOUNT" 2>/dev/null || true
     direnv allow "$TRUNK" 2>/dev/null || true
 
+    # Build MCP plugin
+    if [ -d "$MOUNT/Varia/jvm-debug-bridge" ]; then
+        echo "Building jvm-debug-bridge MCP plugin..."
+        (cd "$MOUNT/Varia/jvm-debug-bridge" && mvn clean package -q)
+    fi
+
     echo ""
     echo "Ready to build/deploy/test from /home/repo/snowflake"
 }
