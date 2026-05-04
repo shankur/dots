@@ -22,7 +22,35 @@ SF_WORKTREES="$HOME/sf-worktrees"
 
 TRUNK="$HOME/Snowflake/trunk"
 
+LOCKFILE="/tmp/worktree-activate.lock"
+ACTIVEFILE="/tmp/worktree-active"
+
 die() { echo "error: $*" >&2; exit 1; }
+
+# Acquire exclusive lock. With --force, stops current deployment first.
+# Without --force, fails if another worktree is active.
+acquire_lock() {
+    local force="${1:-false}"
+    exec 9>"$LOCKFILE"
+    if ! flock -n 9; then
+        local current
+        current=$(cat "$ACTIVEFILE" 2>/dev/null || echo "unknown")
+        if [ "$force" = true ]; then
+            echo "Force-acquiring lock from active worktree '$current'..."
+            echo "Stopping deployment..."
+            sf sut stop 2>/dev/null || true
+            flock 9
+        else
+            die "Worktree '$current' is currently active. Use --force to override."
+        fi
+    fi
+}
+
+# Release lock and clear active file
+release_lock() {
+    rm -f "$ACTIVEFILE"
+    flock -u 9 2>/dev/null || true
+}
 
 # Check layout
 check_layout() {
@@ -74,12 +102,21 @@ cmd_create() {
 }
 
 cmd_activate() {
-    local name="$1"
-    [ -n "$name" ] || die "Usage: worktree activate <name>"
+    local force=false
+    local name=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=true; shift ;;
+            *) name="$1"; shift ;;
+        esac
+    done
+    [ -n "$name" ] || die "Usage: worktree activate [--force] <name>"
     check_layout
 
     local wt="$WORKTREES/$name"
     [ -d "$wt" ] || die "Worktree not found: $wt"
+
+    acquire_lock "$force"
 
     # Ensure sf worktree dir exists
     mkdir -p "$SF_WORKTREES/$name"
@@ -103,6 +140,9 @@ cmd_activate() {
     echo "Mounted: $wt -> $MOUNT"
     echo "Mounted: $SF_WORKTREES/$name -> $SF_MOUNT"
     echo "Mounted: $wt -> $TRUNK"
+
+    # Record active worktree
+    echo "$name" > "$ACTIVEFILE"
 
     # Allow direnv for all mount points
     direnv allow "$MOUNT" 2>/dev/null || true
@@ -139,6 +179,8 @@ cmd_deactivate() {
     echo "Restored: $BASE -> $MOUNT"
     echo "Restored: $SF_BASE -> $SF_MOUNT"
     echo "Restored: $BASE -> $TRUNK"
+
+    release_lock
 }
 
 cmd_status() {
