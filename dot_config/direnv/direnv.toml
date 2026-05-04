@@ -1,0 +1,9 @@
+[global]
+# Hide the verbose environment variable diff
+hide_env_diff = true
+# Hide the verbose logging from direnv, but keep warning and error messages
+log_filter="^direnv:"
+
+[whitelist]
+# Automatically allow direnv in certain directories
+prefix = [ "/home/repo", "/home/ansharma/Snowflake" ]
