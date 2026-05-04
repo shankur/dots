@@ -1,0 +1,44 @@
+{{- if eq .profile "work" -}}
+{
+  "mcpServers": {
+    "confluence": {
+      "command": "sf __mcp run confluence"
+    },
+    "jira": {
+      "command": "sf __mcp run jira"
+    },
+    "buildkite": {
+      "command": "sf __mcp run buildkite"
+    },
+    "snowci": {
+      "command": "sf __mcp run snowci"
+    },
+    "github": {
+      "command": "sf __mcp run github"
+    },
+    "snowhouse": {
+      "command": "sf __mcp run snowhouse"
+    },
+    "graphite": {
+      "command": "sf __mcp run graphite"
+    },
+    "glean": {
+      "command": "sf __mcp run glean"
+    },
+    "jenkins": {
+      "command": "sf __mcp run jenkins"
+    }{{ if ne .chezmoi.os "darwin" }},
+    "jvm-debug": {
+      "command": "java",
+      "args": [
+        "--add-modules",
+        "jdk.jdi",
+        "-jar",
+        "~/Snowflake/trunk/Varia/jvm-debug-bridge/target/jvm-debug-bridge-1.0.0-SNAPSHOT.jar"
+      ]
+    }{{ end }}
+  }
+}
+{{- else -}}
+{}
+{{- end }}
