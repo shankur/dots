@@ -19,8 +19,8 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
 {{- end }}
   },
-{{- if eq .chezmoi.os "darwin" }}
-  "model": "opus",
+{{- if and (eq .chezmoi.os "darwin") (eq .profile "work") }}
+  "model": "opus[1m]",
 {{- else if eq .profile "work" }}
 {{- if eq $claudeAuth "snowhouse" }}
   "model": "opus[1m]",
