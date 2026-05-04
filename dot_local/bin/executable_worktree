@@ -211,7 +211,8 @@ cmd_remove() {
         local src
         src=$(findmnt -n -o SOURCE "$MOUNT" 2>/dev/null)
         if [ "$src" = "$wt" ]; then
-            echo "Worktree '$name' is currently active. Deactivating first..."
+            echo "Worktree '$name' is currently active. Stopping deployment and deactivating..."
+            sf sut stop 2>/dev/null || true
             cmd_deactivate
         fi
     fi
@@ -226,7 +227,7 @@ cmd_remove() {
 
     # Remove corresponding sf directory
     if [ -d "$SF_WORKTREES/$name" ]; then
-        rm -rf "$SF_WORKTREES/$name"
+        sudo rm -rf "$SF_WORKTREES/$name"
         echo "Removed sf directory: $SF_WORKTREES/$name"
     fi
 
