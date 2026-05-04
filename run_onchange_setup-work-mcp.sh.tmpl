@@ -13,8 +13,12 @@ if ! command -v sf &> /dev/null; then
     exit 0
 fi
 
-# Change to Snowflake trunk directory
+# Change to working directory
+{{- if hasKey . "claude_sessions" }}
+TRUNK_DIR="{{ .claude_sessions.cwd }}"
+{{- else }}
 TRUNK_DIR="$HOME/Snowflake/trunk"
+{{- end }}
 if [ ! -d "$TRUNK_DIR" ]; then
     echo "⚠️  $TRUNK_DIR not found, skipping MCP setup"
     exit 0
