@@ -192,8 +192,15 @@ cmd_list() {
 }
 
 cmd_remove() {
-    local name="$1"
-    [ -n "$name" ] || die "Usage: worktree remove <name>"
+    local force=false
+    local name=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=true; shift ;;
+            *) name="$1"; shift ;;
+        esac
+    done
+    [ -n "$name" ] || die "Usage: worktree remove [--force] <name>"
     check_layout
 
     local wt="$WORKTREES/$name"
@@ -211,7 +218,11 @@ cmd_remove() {
 
     echo "Removing worktree '$name'..."
     cd "$BASE"
-    git worktree remove "$wt"
+    if [ "$force" = true ]; then
+        git worktree remove --force "$wt"
+    else
+        git worktree remove "$wt"
+    fi
 
     # Remove corresponding sf directory
     if [ -d "$SF_WORKTREES/$name" ]; then
