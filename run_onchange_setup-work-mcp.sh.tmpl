@@ -36,7 +36,7 @@ MCP_TOOLS=(
 
 for tool in "${MCP_TOOLS[@]}"; do
     echo "  → Adding MCP server: $tool"
-    sf __mcp add "$tool" 2>/dev/null || echo "    ⚠️  Failed to add $tool (may already exist)"
+    sf mcp add "$tool" 2>/dev/null || echo "    ⚠️  Failed to add $tool (may already exist)"
 done
 
 echo "✅ MCP servers configured"

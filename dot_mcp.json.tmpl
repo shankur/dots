@@ -2,28 +2,28 @@
 {
   "mcpServers": {
     "confluence": {
-      "command": "sf __mcp run confluence"
+      "command": "sf mcp run confluence"
     },
     "jira": {
-      "command": "sf __mcp run jira"
+      "command": "sf mcp run jira"
     },
     "snowci": {
-      "command": "sf __mcp run snowci"
+      "command": "sf mcp run snowci"
     },
     "github": {
-      "command": "sf __mcp run github"
+      "command": "sf mcp run github"
     },
     "snowhouse": {
-      "command": "sf __mcp run snowhouse"
+      "command": "sf mcp run snowhouse"
     },
     "graphite": {
-      "command": "sf __mcp run graphite"
+      "command": "sf mcp run graphite"
     },
     "glean": {
-      "command": "sf __mcp run glean"
+      "command": "sf mcp run glean"
     },
     "jenkins": {
-      "command": "sf __mcp run jenkins"
+      "command": "sf mcp run jenkins"
     }{{ if ne .chezmoi.os "darwin" }},
     "jvm-debug": {
       "command": "java",
