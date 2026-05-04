@@ -56,6 +56,18 @@ cmd_create() {
     mkdir -p "$SF_WORKTREES/$name"
     echo "Created sf directory: $SF_WORKTREES/$name"
 
+    # Symlink project-local MCP config from base into worktree
+    if [ -f "$BASE/.mcp.json" ]; then
+        ln -sf "$BASE/.mcp.json" "$wt/.mcp.json"
+        echo "Linked .mcp.json into worktree"
+    fi
+
+    # Build MCP plugin from worktree
+    if [ -d "$wt/Varia/jvm-debug-bridge" ]; then
+        echo "Building jvm-debug-bridge MCP plugin..."
+        (cd "$wt/Varia/jvm-debug-bridge" && mvn clean package -q)
+    fi
+
     echo ""
     echo "Worktree created at: $wt"
     echo "To activate for build: worktree activate $name"
@@ -95,12 +107,6 @@ cmd_activate() {
     # Allow direnv for all mount points
     direnv allow "$MOUNT" 2>/dev/null || true
     direnv allow "$TRUNK" 2>/dev/null || true
-
-    # Build MCP plugin
-    if [ -d "$MOUNT/Varia/jvm-debug-bridge" ]; then
-        echo "Building jvm-debug-bridge MCP plugin..."
-        (cd "$MOUNT/Varia/jvm-debug-bridge" && mvn clean package -q)
-    fi
 
     echo ""
     echo "Ready to build/deploy/test from /home/repo/snowflake"

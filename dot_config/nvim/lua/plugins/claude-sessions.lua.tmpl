@@ -25,9 +25,7 @@ return {
 {{- end }}
       default_cwd = "~",
       cwd_paths = {
-        "~",
 {{- if hasKey . "claude_sessions" }}
-        "{{ .claude_sessions.cwd }}",
 {{- if hasKey .claude_sessions "cwd_paths" }}
 {{- range .claude_sessions.cwd_paths }}
         "{{ . }}",
