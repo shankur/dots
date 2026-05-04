@@ -91,6 +91,11 @@ cmd_activate() {
     echo "Mounted: $wt -> $MOUNT"
     echo "Mounted: $SF_WORKTREES/$name -> $SF_MOUNT"
     echo "Mounted: $wt -> $TRUNK"
+
+    # Allow direnv for all mount points
+    direnv allow "$MOUNT" 2>/dev/null || true
+    direnv allow "$TRUNK" 2>/dev/null || true
+
     echo ""
     echo "Ready to build/deploy/test from /home/repo/snowflake"
 }
