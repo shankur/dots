@@ -40,12 +40,13 @@ This repo uses bind-mount worktrees for parallel development. ALWAYS use the `wo
 
 ## Build Verification
 - ALWAYS run `sf sut build` to verify changes compile successfully before committing
+- The worktree MUST be activated before running `sf sut build` (it builds from /home/repo/snowflake)
 - Fix any build errors before proceeding with commit/push
 
 ## Code Formatting
 - ALWAYS run `snow format` on modified files before committing
 - This applies to all languages in the monorepo (Java, Python, SQL, etc.)
-- Format first, then verify build, then commit
+- Format first, then activate worktree, then verify build, then commit
 
 ## Pull Requests
 - PRs MUST follow the format shown in: https://github.com/snowflake-eng/snowflake/pull/423950
