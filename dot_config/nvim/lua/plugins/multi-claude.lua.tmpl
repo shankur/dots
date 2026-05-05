@@ -23,6 +23,7 @@ return {
 {{- if ne .profile "work" }}
       claude_args = { "--model", "claude-sonnet-4-6" },
 {{- end }}
+      skip_permissions = true,
       default_cwd = "~",
       cwd_paths = {
 {{- if hasKey . "claude_sessions" }}

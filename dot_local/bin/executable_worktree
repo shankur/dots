@@ -160,6 +160,9 @@ cmd_deactivate() {
         return
     fi
 
+    echo "Stopping deployment..."
+    sf sut stop 2>/dev/null || true
+
     echo "Unmounting $MOUNT..."
     sudo umount -l "$MOUNT"
     if mountpoint -q "$SF_MOUNT" 2>/dev/null; then
