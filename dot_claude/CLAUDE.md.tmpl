@@ -38,6 +38,15 @@ This repo uses bind-mount worktrees for parallel development. ALWAYS use the `wo
 - Only use full DPO/parameter deploys if making fundamental changes to DPO or parameters
 - Always activate the worktree before deploying
 
+## Build Verification
+- ALWAYS run `sf sut build` to verify changes compile successfully before committing
+- Fix any build errors before proceeding with commit/push
+
+## Code Formatting
+- ALWAYS run `snow format` on modified files before committing
+- This applies to all languages in the monorepo (Java, Python, SQL, etc.)
+- Format first, then verify build, then commit
+
 ## Pull Requests
 - PRs MUST follow the format shown in: https://github.com/snowflake-eng/snowflake/pull/423950
 - ALWAYS include the Jira ticket number in the PR title (e.g. "SNOW-12345: ...")
