@@ -1,0 +1,15 @@
+# Minimal PATH setup for non-interactive shells (SSH, zellij panes, editors).
+# .zshenv is sourced by ALL zsh invocations — keep it fast and idempotent.
+
+{{- if eq .chezmoi.os "darwin" }}
+# Homebrew (needed before anything else on macOS)
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{{ end -}}
+
+{{- if eq .profile "work" }}
+export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.cargo/bin:$PATH"
+{{- else }}
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+{{- end }}
