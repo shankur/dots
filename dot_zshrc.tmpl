@@ -3,7 +3,7 @@ setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_SAVE_NO_DUPS
 setopt HIST_FIND_NO_DUPS
 
-{{- if eq .chezmoi.os "darwin" }}
+{{ if eq .chezmoi.os "darwin" -}}
 # Homebrew (PATH set in .zshenv; this loads completions/env vars for interactive shells)
 eval "$(/opt/homebrew/bin/brew shellenv)"
 {{ end -}}

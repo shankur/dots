@@ -1,0 +1,11 @@
+[Unit]
+Description=Restore worktree bind mounts after boot
+ConditionPathIsDirectory=/home/repo/snowflake-base
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/worktree init
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

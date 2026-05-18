@@ -279,6 +279,44 @@ cmd_remove() {
     echo "Removed: $wt"
 }
 
+cmd_init() {
+    check_layout
+
+    # If mounted, check if it's base or an active worktree
+    if mountpoint -q "$MOUNT" 2>/dev/null; then
+        local src
+        src=$(findmnt -n -o SOURCE "$MOUNT" 2>/dev/null)
+        if [ "$src" = "$BASE" ]; then
+            echo "Base already mounted at $MOUNT"
+            return
+        fi
+        # A worktree is active — deactivate it first
+        echo "Active worktree detected ($src), deactivating..."
+        cmd_deactivate
+        return
+    fi
+
+    # Clean up stale state from before reboot
+    if [ -f "$ACTIVEFILE" ]; then
+        local stale
+        stale=$(cat "$ACTIVEFILE" 2>/dev/null)
+        echo "Clearing stale active worktree '$stale' (lost on reboot)"
+        rm -f "$ACTIVEFILE"
+        rm -f "$LOCKFILE"
+    fi
+
+    echo "Restoring base bind mounts..."
+    sudo mount --bind "$BASE" "$MOUNT"
+    sudo mount --bind "$SF_BASE" "$SF_MOUNT"
+    sudo mount --bind "$BASE" "$TRUNK"
+    echo "Mounted: $BASE -> $MOUNT"
+    echo "Mounted: $SF_BASE -> $SF_MOUNT"
+    echo "Mounted: $BASE -> $TRUNK"
+
+    direnv allow "$MOUNT" 2>/dev/null || true
+    direnv allow "$TRUNK" 2>/dev/null || true
+}
+
 cmd_build() {
     local name="$1"
     [ -n "$name" ] || die "Usage: worktree build <name> <bazel-args...>"
@@ -293,6 +331,7 @@ cmd_build() {
 
 # Dispatch
 case "${1:-}" in
+    init)       shift; cmd_init "$@" ;;
     create)     shift; cmd_create "$@" ;;
     activate)   shift; cmd_activate "$@" ;;
     deactivate) shift; cmd_deactivate "$@" ;;
@@ -306,6 +345,7 @@ case "${1:-}" in
         echo "Usage: worktree <command> [args]"
         echo ""
         echo "Commands:"
+        echo "  init                   Restore base bind mounts (run after reboot)"
         echo "  create <name> [base]   Create a new worktree (default base: main)"
         echo "  activate <name>        Bind-mount worktree for build/deploy/test"
         echo "  deactivate             Unmount worktree, restore base repo"

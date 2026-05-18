@@ -1,0 +1,15 @@
+#!/bin/bash
+# Enable worktree-init systemd user service
+# hash: v1
+{{ if ne .profile "work" }}
+exit 0
+{{ end }}
+{{ if eq .chezmoi.os "darwin" }}
+exit 0
+{{ end }}
+set -e
+
+if command -v systemctl &>/dev/null; then
+    systemctl --user daemon-reload
+    systemctl --user enable worktree-init.service
+fi
