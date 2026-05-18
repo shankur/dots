@@ -185,6 +185,10 @@ cmd_deactivate() {
     echo "Restored: $SF_BASE -> $SF_MOUNT"
     echo "Restored: $BASE -> $TRUNK"
 
+    # Re-allow direnv for the restored mounts
+    direnv allow "$MOUNT" 2>/dev/null || true
+    direnv allow "$TRUNK" 2>/dev/null || true
+
     release_lock
 }
 
