@@ -123,6 +123,8 @@ cmd_activate() {
 
     # Unmount current if mounted
     if mountpoint -q "$MOUNT" 2>/dev/null; then
+        echo "Stopping any running deployment..."
+        sf sut stop 2>/dev/null || true
         echo "Unmounting current bind mount..."
         sudo umount -l "$MOUNT"
     fi
