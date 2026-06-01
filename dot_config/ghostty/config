@@ -17,7 +17,7 @@ font-family = "JetBrainsMono Nerd Font"
 font-size = 14
 
 # Theme (to match your Catppuccin setup)
-theme = catppuccin-mocha
+theme = Catppuccin Mocha
 
 # Key bindings - ensure TAB works for completion
 keybind = tab=text:\t
