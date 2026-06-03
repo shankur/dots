@@ -20,7 +20,9 @@ return {
       { "<leader>c5", "<cmd>ClaudeJump5<cr>", desc = "Jump to Session 5" },
     },
     opts = {
-{{- if ne .profile "work" }}
+{{- if eq .profile "work" }}
+      claude_cmd = "env ANTHROPIC_MODEL=claude-opus-4-8[1m] sf ai claude --",
+{{- else }}
       claude_args = { "--model", "claude-sonnet-4-6" },
 {{- end }}
       skip_permissions = true,
@@ -37,7 +39,11 @@ return {
       hosts = {
 {{- if hasKey . "claude_sessions" }}
 {{- range .claude_sessions.hosts }}
+{{- if eq $.profile "work" }}
+        { name = "{{ . }}", addr = "{{ $.claude_sessions.username }}@{{ . }}", cwd = "{{ $.claude_sessions.cwd }}" },
+{{- else }}
         { name = "{{ . }}", addr = "{{ $.claude_sessions.username }}@{{ . }}", cwd = "{{ $.claude_sessions.cwd }}", model = "{{ $.claude_sessions.model }}" },
+{{- end }}
 {{- end }}
 {{- end }}
       },
