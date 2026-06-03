@@ -1,7 +1,7 @@
 {{ if eq .profile "work" -}}
 #!/bin/bash
 # Setup Snowflake MCP servers for work profile
-# hash: {{ include "run_onchange_setup-work-mcp.sh.tmpl" | sha256sum }}
+# hash: {{ include "run_onchange_after_setup-work-mcp.sh.tmpl" | sha256sum }}
 
 set -e
 
