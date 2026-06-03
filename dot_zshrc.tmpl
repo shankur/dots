@@ -269,6 +269,27 @@ fi
 eval "$(sf aliases)"
 export SNOWDASH_CACHE_FILE="$HOME/claude-kb/cache/snowtrail.json"
 alias claude='claude --dangerously-skip-permissions'
+
+# Refresh the forwarded GitHub ssh-agent on a Snowflake cloud workspace.
+# The sfcli ssh config forwards $SSH_AUTH_SOCK to /dev/shm/ssh-agent-$USER.sock
+# on the remote, but a persisted ControlMaster (ControlPersist 8h) can pin a
+# now-dead local agent socket, breaking git / `sf __ssh` auth with
+# "Permission denied (publickey)". This rebinds the forward to the current
+# agent without restarting the master, so multiplexed sessions stay connected.
+gh-agent-refresh() {
+  local host="${1:-alice}"
+  if [[ -z "$SSH_AUTH_SOCK" ]]; then
+    echo "gh-agent-refresh: no SSH_AUTH_SOCK in this shell" >&2
+    return 1
+  fi
+  ssh -O cancel -R "/dev/shm/ssh-agent-$USER.sock" "$host" 2>/dev/null
+  ssh "$host" -- "rm -f /dev/shm/ssh-agent-$USER.sock" 2>/dev/null
+  ssh -O forward -R "/dev/shm/ssh-agent-$USER.sock:$SSH_AUTH_SOCK" "$host" || {
+    echo "gh-agent-refresh: forward failed for $host" >&2
+    return 1
+  }
+  ssh "$host" -- 'zsh -lc "sf auth check"' 2>&1 | grep -i github
+}
 {{ end -}}
 {{ if eq .chezmoi.os "darwin" }}
 # >>> conda initialize >>>
