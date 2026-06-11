@@ -1,3 +1,7 @@
+> **NEVER HAND-WAVE: MAKE SURE THAT YOUR ASSESSMENT IS CORRECT BEFORE PRESENTING OR ACTING UPON THEM**
+
+---
+
 You have a personal knowledge base at ~/claude-kb/. When answering questions about internal tools, systems, or workflows, read the relevant knowledge base files from that directory.
 
 - Snowhouse (Snowflake internal data warehouse): ~/claude-kb/knowledge-base/SNOWHOUSE_KB.md
@@ -6,7 +10,93 @@ When creating new commands or skills:
 - General/portable skills: ~/.local/share/chezmoi/dot_claude/skills/<name>/SKILL.md (managed by chezmoi, deployed everywhere)
 - Project-specific skills: ~/claude-kb/skills/<name>/ (auto-symlinked into ~/.claude/skills/ when claude-kb exists)
 - Commands: ~/claude-kb/commands/<name>.md
+
+---
+
+## Behavioral Guidelines
+
+Reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+### 1. Think Before Coding
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### 2. Simplicity First
+**Minimum code that solves the problem. Nothing speculative.**
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### 3. Surgical Changes
+**Touch only what you must. Clean up only your own mess.**
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+The test: Every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+**Define success criteria. Loop until verified.**
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+For multi-step tasks, state a brief plan:
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+{{ if eq .profile "work" }}
+---
+
+## PR Format: snowflake-eng/snowflake
+
+### Title
+```
+SNOW-XXXXXXX: Brief description of the change
+```
+
+### Body template
+```markdown
+## Summary
+
+- <bullet: what changed and why>
+- <bullet: additional notable changes>
+
+Tracked under SNOW-XXXXXXX. (include for subtasks; omit otherwise)
+
+## Test plan
+
+- [x] `<build/test command>` — <result or link>
+- [x] This change has passed precommit: <buildkite URL>
+- [x] This change is protected by parameter — <details, or "N/A, removing parameter" / "N/A, non-behavioral change">
+```
+
+Notes:
+- Use `## Context` instead of `## Summary` when extra background is needed (e.g., explaining why a parameter is being removed after rollout).
+- The precommit checkbox line is required; link to the Buildkite build.
+- The "protected by parameter" checkbox is required; mark N/A if the change is not behind a flag.
+- To start a new precommit, run: `sf ci build start default-precommit`
+- ALWAYS include the Jira ticket number in the PR title (e.g. "SNOW-12345: ...")
+- If no Jira number is specified, ASK the user before committing/pushing
+- Never create a PR without a Jira number in the header
+{{ end -}}
 {{ if and (eq .profile "work") (ne .chezmoi.os "darwin") }}
+---
+
 # Snowflake Monorepo Workflow
 
 ## Worktree-based development
@@ -47,12 +137,6 @@ This repo uses bind-mount worktrees for parallel development. ALWAYS use the `wo
 - ALWAYS run `snow format` on modified files before committing
 - This applies to all languages in the monorepo (Java, Python, SQL, etc.)
 - Format first, then activate worktree, then verify build, then commit
-
-## Pull Requests
-- PRs MUST follow the format shown in: https://github.com/snowflake-eng/snowflake/pull/423950
-- ALWAYS include the Jira ticket number in the PR title (e.g. "SNOW-12345: ...")
-- If no Jira number is specified, ASK the user before committing/pushing
-- Never create a PR without a Jira number in the header
 
 ## Parallel Agents
 - Use up to 5 parallel agents for all work (research, implementation, testing)
