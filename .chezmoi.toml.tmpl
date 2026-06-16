@@ -1,3 +1,8 @@
+encryption = "age"
+[age]
+    identity = "{{ .chezmoi.homeDir }}/.config/chezmoi/key.txt"
+    recipient = "age1h9axv0t00zwnnkfem20pfzjzwy7sq4dww5j8lp0etkha27mt2essdld6l2"
+
 [data]
     profile = "{{ promptChoiceOnce . "profile" "Profile" (list "work" "personal") "work" }}"
     name = "{{ promptStringOnce . "name" "Your full name" }}"

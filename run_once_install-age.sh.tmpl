@@ -1,0 +1,55 @@
+#!/bin/bash
+# Install `age` — used by chezmoi to encrypt/decrypt ~/.jarvis/config.json (and to generate the
+# age key with age-keygen). chezmoi's built-in age handles decrypt without this binary, but having
+# it lets you run age-keygen / age directly. Idempotent.
+
+if command -v age >/dev/null 2>&1 && command -v age-keygen >/dev/null 2>&1; then
+    echo "  ✓ age already installed"
+    exit 0
+fi
+
+echo "  → Installing age..."
+{{- if eq .chezmoi.os "darwin" }}
+if command -v brew >/dev/null 2>&1; then
+    brew install age || true
+fi
+{{- else }}
+# Linux: prefer nix, then a distro package manager.
+if command -v nix-env >/dev/null 2>&1; then
+    nix-env -iA nixpkgs.age || true
+elif command -v apt >/dev/null 2>&1; then
+    sudo apt update && sudo apt install -y age || true
+elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y age || true
+elif command -v yum >/dev/null 2>&1; then
+    sudo yum install -y age || true
+fi
+{{- end }}
+
+# Fallback: fetch the upstream static binaries into ~/.local/bin if still missing.
+if ! command -v age >/dev/null 2>&1; then
+    echo "  → Falling back to upstream age release binary..."
+    OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    ARCH="$(uname -m)"
+    case "$ARCH" in
+        x86_64|amd64) ARCH=amd64 ;;
+        aarch64|arm64) ARCH=arm64 ;;
+    esac
+    VER="$(curl -fsSL https://api.github.com/repos/FiloSottile/age/releases/latest 2>/dev/null \
+        | grep -oE '"tag_name":[[:space:]]*"[^"]+"' | grep -oE 'v[0-9.]+' | head -1)"
+    [ -n "$VER" ] || VER="v1.2.1"
+    mkdir -p "$HOME/.local/bin"
+    TMP="$(mktemp -d)"
+    if curl -fsSL "https://github.com/FiloSottile/age/releases/download/${VER}/age-${VER}-${OS}-${ARCH}.tar.gz" -o "$TMP/age.tgz"; then
+        tar xzf "$TMP/age.tgz" -C "$TMP" \
+            && cp "$TMP/age/age" "$TMP/age/age-keygen" "$HOME/.local/bin/" \
+            && chmod +x "$HOME/.local/bin/age" "$HOME/.local/bin/age-keygen"
+    fi
+    rm -rf "$TMP"
+fi
+
+if command -v age >/dev/null 2>&1; then
+    echo "  ✓ age installed ($(command -v age))"
+else
+    echo "  ⚠ could not install age automatically — install it manually: https://github.com/FiloSottile/age"
+fi

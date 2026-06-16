@@ -2,3 +2,8 @@
 # Worktree tools are only for cloud workspaces (Linux)
 .local/bin/worktree
 {{- end }}
+
+# jarvis: never manage runtime state (DB holds transcripts/diffs, worktrees are large, ssh sockets are live)
+.jarvis/jarvis.sqlite*
+.jarvis/worktrees
+.jarvis/ssh
