@@ -1,6 +1,11 @@
 {{- if eq .chezmoi.os "darwin" }}
 # Worktree tools are only for cloud workspaces (Linux)
 .local/bin/worktree
+{{- else }}
+# jarvis runs only on the local mac, never on cloud workspaces (Linux).
+# The encrypted config needs the age key (key.txt), which only exists on the mac;
+# ignoring the whole dir here keeps chezmoi from trying to decrypt it.
+.jarvis
 {{- end }}
 
 # jarvis: never manage runtime state (DB holds transcripts/diffs, worktrees are large, ssh sockets are live)
