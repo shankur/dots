@@ -1,7 +1,7 @@
 #!/bin/bash
 # Set up worktree-based development for the snowflake monorepo
 # layout: snowflake-worktree/main/code (base), snowflake-worktree/worktree-<name>/{code,artifacts}
-# hash: v4
+# hash: v5
 {{ if ne .profile "work" }}
 echo "Skipping worktree setup (not work profile)"
 exit 0
@@ -75,6 +75,36 @@ elif [ -d "$MOUNT/.git" ]; then
 else
     echo "WARNING: No existing repo found at $MOUNT or $OLD_BASE. Skipping."
     exit 0
+fi
+
+# Migrate existing worktrees from old /home/repo/worktrees/<name> layout
+OLD_WORKTREES="/home/repo/worktrees"
+OLD_SF_WORKTREES="$HOME/sf-worktrees"
+if [ -d "$OLD_WORKTREES" ]; then
+    echo "Migrating existing worktrees from $OLD_WORKTREES..."
+    for wt in "$OLD_WORKTREES"/*/; do
+        [ -d "$wt" ] || continue
+        name=$(basename "$wt")
+        new_wt="$ROOT/worktree-$name"
+        mkdir -p "$new_wt"
+        mv "$wt" "$new_wt/code"
+        echo "  Moved $wt -> $new_wt/code"
+
+        if [ -d "$OLD_SF_WORKTREES/$name" ]; then
+            mv "$OLD_SF_WORKTREES/$name" "$new_wt/artifacts"
+            echo "  Moved $OLD_SF_WORKTREES/$name -> $new_wt/artifacts"
+        else
+            mkdir -p "$new_wt/artifacts"
+        fi
+    done
+
+    # Repair git worktree refs now that paths have changed
+    echo "Repairing git worktree refs..."
+    git -C "$MAIN_CODE" worktree repair 2>/dev/null || true
+
+    # Clean up old directories if empty
+    rmdir "$OLD_WORKTREES" 2>/dev/null && echo "Removed $OLD_WORKTREES" || true
+    rmdir "$OLD_SF_WORKTREES" 2>/dev/null && echo "Removed $OLD_SF_WORKTREES" || true
 fi
 
 # Create mount points
