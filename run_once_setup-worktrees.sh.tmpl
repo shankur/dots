@@ -1,7 +1,7 @@
 #!/bin/bash
 # Set up worktree-based development for the snowflake monorepo
-# layout: snowflake-base (actual repo), worktrees/<name> (checkouts), snowflake (mount point)
-# hash: v2
+# layout: snowflake-worktree/main/code (base), snowflake-worktree/worktree-<name>/{code,artifacts}
+# hash: v3
 {{ if ne .profile "work" }}
 echo "Skipping worktree setup (not work profile)"
 exit 0
@@ -12,72 +12,73 @@ exit 0
 {{ end }}
 set -e
 
-BASE="/home/repo/snowflake-base"
+ROOT="/home/repo/snowflake-worktree"
+MAIN_CODE="$ROOT/main/code"
+MAIN_ARTIFACTS="$ROOT/main/artifacts"
 MOUNT="/home/repo/snowflake"
-WORKTREES="/home/repo/worktrees"
-
-SF_BASE="$HOME/sf-base"
 SF_MOUNT="$HOME/sf"
-SF_WORKTREES="$HOME/sf-worktrees"
+TRUNK="$HOME/Snowflake/trunk"
+
+# Old paths (for migration)
+OLD_BASE="/home/repo/snowflake-base"
+OLD_SF_BASE="$HOME/sf-base"
 
 # Already set up?
-if [ -d "$BASE/.git" ] && [ -d "$WORKTREES" ]; then
+if [ -d "$MAIN_CODE/.git" ]; then
     echo "Worktree layout already in place"
     exit 0
 fi
 
-# Only proceed if the original repo exists and hasn't been moved yet
-if [ ! -d "$MOUNT/.git" ]; then
-    echo "WARNING: $MOUNT/.git not found — cannot set up worktree layout. Skipping."
-    exit 0
-fi
+# Migrate from old layout if present
+if [ -d "$OLD_BASE/.git" ]; then
+    echo "Migrating from old layout..."
+    mkdir -p "$ROOT/main"
+    mv "$OLD_BASE" "$MAIN_CODE"
+    echo "Moved $OLD_BASE -> $MAIN_CODE"
 
-# Don't run if snowflake-base already exists (partial setup?)
-if [ -d "$BASE" ]; then
-    echo "WARNING: $BASE already exists but setup looks incomplete. Skipping to avoid data loss."
-    exit 0
-fi
+    if [ -d "$OLD_SF_BASE" ]; then
+        mv "$OLD_SF_BASE" "$MAIN_ARTIFACTS"
+        echo "Moved $OLD_SF_BASE -> $MAIN_ARTIFACTS"
+    else
+        mkdir -p "$MAIN_ARTIFACTS"
+    fi
 
-echo "Setting up worktree-based development layout..."
+# Fresh setup from existing mount
+elif [ -d "$MOUNT/.git" ]; then
+    echo "Setting up worktree layout from $MOUNT..."
+    mkdir -p "$ROOT/main"
+    mv "$MOUNT" "$MAIN_CODE"
+    echo "Moved $MOUNT -> $MAIN_CODE"
 
-# 1. Move the repo
-echo "Moving $MOUNT -> $BASE"
-mv "$MOUNT" "$BASE"
+    if [ -d "$SF_MOUNT" ]; then
+        mv "$SF_MOUNT" "$MAIN_ARTIFACTS"
+        echo "Moved $SF_MOUNT -> $MAIN_ARTIFACTS"
+    else
+        mkdir -p "$MAIN_ARTIFACTS"
+    fi
 
-# 2. Move sf to sf-base
-if [ -d "$SF_MOUNT" ]; then
-    echo "Moving $SF_MOUNT -> $SF_BASE"
-    mv "$SF_MOUNT" "$SF_BASE"
 else
-    mkdir -p "$SF_BASE"
+    echo "WARNING: No existing repo found at $MOUNT or $OLD_BASE. Skipping."
+    exit 0
 fi
 
-# 3. Create directories
-echo "Creating mount points and worktree directories"
-mkdir -p "$MOUNT"
-mkdir -p "$WORKTREES"
-mkdir -p "$SF_MOUNT"
-mkdir -p "$SF_WORKTREES"
+# Create mount points
+echo "Creating mount points..."
+mkdir -p "$MOUNT" "$SF_MOUNT" "$TRUNK"
 
-# 4. Bind mount base back so nothing breaks immediately
-echo "Bind-mounting base at $MOUNT and $SF_MOUNT"
-sudo mount --bind "$BASE" "$MOUNT"
-sudo mount --bind "$SF_BASE" "$SF_MOUNT"
-
-# 5. Build jvm-debug-bridge MCP plugin from base
-if [ -d "$BASE/Varia/jvm-debug-bridge" ]; then
-    echo "Building jvm-debug-bridge MCP plugin..."
-    (cd "$BASE/Varia/jvm-debug-bridge" && mvn clean package -q)
-fi
+# Initial bind mounts
+echo "Bind-mounting main..."
+sudo mount --bind "$MAIN_CODE"      "$MOUNT"
+sudo mount --bind "$MAIN_ARTIFACTS" "$SF_MOUNT"
+sudo mount --bind "$MAIN_CODE"      "$TRUNK"
+ln -sfn "$MOUNT" "$TRUNK"
 
 echo ""
 echo "Worktree layout ready:"
-echo "  Base repo:   $BASE"
-echo "  Base sf:     $SF_BASE"
-echo "  Worktrees:   $WORKTREES/<name>"
-echo "  SF worktrees: $SF_WORKTREES/<name>"
-echo "  Mount point: $MOUNT (currently mounted to base)"
-echo "  SF mount:    $SF_MOUNT (currently mounted to sf-base)"
+echo "  Main code:   $MAIN_CODE"
+echo "  Main arts:   $MAIN_ARTIFACTS"
+echo "  Mount:       $MOUNT  (-> main/code)"
+echo "  SF mount:    $SF_MOUNT (-> main/artifacts)"
+echo "  Trunk:       $TRUNK"
 echo ""
-echo "Use 'worktree create <name>' to create a worktree"
-echo "Use 'worktree activate <name>' to bind-mount it for build/deploy"
+echo "Use 'worktree create <name> --remote <host>' from your Mac to get started"
