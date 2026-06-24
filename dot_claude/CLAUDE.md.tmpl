@@ -94,51 +94,61 @@ Notes:
 - If no Jira number is specified, ASK the user before committing/pushing
 - Never create a PR without a Jira number in the header
 {{ end -}}
-{{ if and (eq .profile "work") (ne .chezmoi.os "darwin") }}
+{{ if eq .profile "work" }}
 ---
 
-# Snowflake Monorepo Workflow
+## Worktree Workflow
 
-## Worktree-based development
-This repo uses bind-mount worktrees for parallel development. ALWAYS use the `worktree` CLI (a shell script at ~/.local/bin/worktree, on PATH):
+All code changes in the snowflake repo use the `worktree` script (`~/.local/bin/worktree`).
+The original clone is never modified directly.
 
-- `worktree create <name> [base]` — new worktree branch
-- `worktree activate <name>` — bind-mount for build/test
-- `worktree deactivate` — restore base repo
-- `worktree status` — check what's active
-- `worktree list` — list all worktrees
-- `worktree remove <name>` — remove a worktree
-- `worktree build <name> <bazel-args...>` — activate + build + deactivate
+### Layout
 
-## Rules
-- Never modify /home/repo/snowflake-base directly for feature work
-- Create a worktree for each task/branch
-- Activate before building, deactivate when done
-- The mount point /home/repo/snowflake is where builds happen
-- Each worktree has a paired ~/sf directory (build artifacts and logs)
-  - ~/sf-base — default artifacts, ~/sf-worktrees/<name> — per-worktree artifacts
-  - `activate` and `deactivate` swap both mounts together
+| Location | Purpose |
+|---|---|
+| `~/Projects/snowflake` | Read-only main clone (Mac, never edited) |
+| `~/Projects/snowflake-worktree/worktree-<name>/` | Local worktree for a task (Mac) |
+| `~/.local/share/worktree-meta/<name>.env` | Per-worktree metadata (REMOTE, BRANCH) |
+| `<remote>:/home/repo/snowflake-worktree/main/code` | Remote main clone |
+| `<remote>:/home/repo/snowflake-worktree/worktree-<name>/code` | Remote worktree checkout |
+| `<remote>:/home/repo/snowflake-worktree/worktree-<name>/artifacts` | Remote build artifacts |
+| `<remote>:/home/repo/snowflake` | Bind-mount point (active worktree's code) |
+| `<remote>:~/sf` | Bind-mount point (active worktree's artifacts) |
 
-## Testing with Snowfort
-- For Snowfort tests, read and follow the skills under `/home/repo/snowflake/Snowfort/.claude/`
-- Use `snowsql -c reg` to run SQL directly against Snowflake after deploying changes
+### Standard workflow
 
-## Deployment
-- Use `sf sut redeploy` to build and deploy local changes (builds both GS and XP)
-- Only use full DPO/parameter deploys if making fundamental changes to DPO or parameters
-- Always activate the worktree before deploying
+```bash
+# Start a new task (Mac)
+worktree create <name> --remote <host> [--base <branch>]
 
-## Build Verification
-- ALWAYS run `sf sut build` to verify changes compile successfully before committing
-- The worktree MUST be activated before running `sf sut build` (it builds from /home/repo/snowflake)
-- Fix any build errors before proceeding with commit/push
+# Push code and activate on remote — first time only
+worktree deploy <name> --activate
 
-## Code Formatting
-- ALWAYS run `snow format` on modified files before committing
-- This applies to all languages in the monorepo (Java, Python, SQL, etc.)
-- Format first, then activate worktree, then verify build, then commit
+# Iterate: commit locally, push to remote (SUT keeps running, no re-activate needed)
+worktree deploy <name>
 
-## Parallel Agents
-- Use up to 5 parallel agents for all work (research, implementation, testing)
-- Prefer parallel execution whenever tasks are independent
+# Switch to a different worktree
+worktree activate <other-name>
+
+# Restore remote to main
+worktree deactivate <name>
+
+# Keep main up to date locally and on all remotes
+worktree sync
+
+# Clean up when done
+worktree remove <name>
+```
+
+### Recovery
+
+```bash
+worktree force-reset <name>   # stop SUT, restore main, ignore lock
+```
+
+### Key rules
+- Always work in a worktree — never edit `~/Projects/snowflake` directly
+- `deploy` pushes commits; no re-activate needed after each push (bind mount already points there)
+- `activate` is only needed on first deploy or when switching between worktrees
+- Code cannot be built locally — deploy to remote and build there
 {{ end -}}
