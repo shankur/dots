@@ -333,8 +333,14 @@ cmd_create() {
 }
 
 cmd_deploy() {
-    local name="$1"
-    [[ -n "$name" ]] || die "Usage: worktree deploy <name>"
+    local name="" activate=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --activate|-a) activate=true; shift ;;
+            *) name="$1"; shift ;;
+        esac
+    done
+    [[ -n "$name" ]] || die "Usage: worktree deploy <name> [--activate]"
 
     local local_wt="$LOCAL_ROOT/worktree-$name"
     [[ -d "$local_wt" ]] || die "Local worktree not found: $local_wt"
@@ -343,7 +349,7 @@ cmd_deploy() {
     remote=$(meta_read "$name" REMOTE)
     branch=$(meta_read "$name" BRANCH)
 
-    # 1. Ensure branch has at least one commit (git worktree add -b creates an unpushed branch)
+    # 1. Ensure no uncommitted changes
     local status
     status=$(git -C "$local_wt" status --porcelain)
     if [[ -n "$status" ]]; then
@@ -368,7 +374,11 @@ cmd_deploy() {
         fi
     "
 
-    info "Deployed. Activate with: worktree activate $name"
+    if [[ "$activate" == true ]]; then
+        cmd_activate "$name"
+    else
+        info "Deployed. To make it active: worktree activate $name"
+    fi
 }
 
 cmd_sync() {
