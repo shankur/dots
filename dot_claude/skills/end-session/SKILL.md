@@ -56,10 +56,16 @@ Write a concise session summary to the `~/ai-history` repository.
    - Potential next steps
    ```
 
-5. **Stage, commit, and push** the file to the ai-history repo:
+5. **Stage, commit, and push** the file to the ai-history repo. Scope BOTH `add`
+   and `commit` to the explicit file path: the repo is shared by parallel
+   sessions, and a `commit` without a pathspec would sweep in another session's
+   concurrently-staged file (wrong attribution). The pathspec on `commit` limits
+   it to your file even if the shared index holds other staged changes:
    ```
-   cd ~/ai-history && git add <file> && git commit -m "Add session <uuid>: <topic-slug>" && git push
+   cd ~/ai-history && git add -- <file> && git commit -m "Add session <uuid>: <topic-slug>" -- <file> && git push
    ```
+   If the commit fails on a `.git/index.lock` (another session mid-commit), wait a
+   moment and retry — do NOT delete the lock unless no `git` process is running.
 
 ## Writing Guidelines
 

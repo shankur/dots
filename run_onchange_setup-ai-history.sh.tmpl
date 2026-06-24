@@ -26,9 +26,14 @@ else
     echo "ai-history repo cloned to $DEST"
 fi
 
-# Run setup.sh if it exists
+# Run setup.sh if it exists. This only configures ai-history's local git hooks,
+# which is non-essential — never let its failure abort the whole chezmoi apply.
 if [ -f "$DEST/setup.sh" ]; then
     echo "Running ai-history setup.sh..."
-    (cd "$DEST" && bash setup.sh)
-    echo "ai-history setup complete"
+    if (cd "$DEST" && bash setup.sh); then
+        echo "ai-history setup complete"
+    else
+        rc=$?
+        echo "WARNING: ai-history setup.sh failed (exit $rc) — skipping hook setup, not blocking chezmoi" >&2
+    fi
 fi
