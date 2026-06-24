@@ -1,7 +1,7 @@
 #!/bin/bash
 # Set up worktree-based development for the snowflake monorepo
 # layout: snowflake-worktree/main/code (base), snowflake-worktree/worktree-<name>/{code,artifacts}
-# hash: v3
+# hash: v4
 {{ if ne .profile "work" }}
 echo "Skipping worktree setup (not work profile)"
 exit 0
@@ -29,9 +29,21 @@ if [ -d "$MAIN_CODE/.git" ]; then
     exit 0
 fi
 
+# Unmount anything currently mounted from old/current paths so mv succeeds
+unmount_if_mounted() {
+    local mp="$1"
+    if mountpoint -q "$mp" 2>/dev/null; then
+        echo "Unmounting $mp..."
+        sudo umount -l "$mp"
+    fi
+}
+
 # Migrate from old layout if present
 if [ -d "$OLD_BASE/.git" ]; then
     echo "Migrating from old layout..."
+    unmount_if_mounted "$MOUNT"
+    unmount_if_mounted "$SF_MOUNT"
+    unmount_if_mounted "$TRUNK"
     mkdir -p "$ROOT/main"
     mv "$OLD_BASE" "$MAIN_CODE"
     echo "Moved $OLD_BASE -> $MAIN_CODE"
@@ -46,6 +58,9 @@ if [ -d "$OLD_BASE/.git" ]; then
 # Fresh setup from existing mount
 elif [ -d "$MOUNT/.git" ]; then
     echo "Setting up worktree layout from $MOUNT..."
+    unmount_if_mounted "$MOUNT"
+    unmount_if_mounted "$SF_MOUNT"
+    unmount_if_mounted "$TRUNK"
     mkdir -p "$ROOT/main"
     mv "$MOUNT" "$MAIN_CODE"
     echo "Moved $MOUNT -> $MAIN_CODE"
