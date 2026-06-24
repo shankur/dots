@@ -90,7 +90,6 @@ acquire_lock() {
         current=$(cat "$REMOTE_LOCK" 2>/dev/null || echo "unknown")
         if [[ "$force" == true ]]; then
             info "Force-acquiring lock from '$current'..."
-            sf sut stop 2>/dev/null || true
             flock 9
         else
             die "Worktree '$current' holds the lock. Use force-reset to override."
@@ -144,6 +143,9 @@ cmd_remote_init() {
         info "Clearing stale lock: $(cat "$REMOTE_LOCK")"
         echo "" > "$REMOTE_LOCK"
     fi
+
+    info "Stopping any running deployment..."
+    sf sut stop 2>/dev/null || true
 
     info "Restoring base bind mounts..."
     mount_worktree "$REMOTE_MAIN/code" "$REMOTE_MAIN/artifacts"
@@ -212,10 +214,10 @@ cmd_remote_activate() {
     local wt="$REMOTE_ROOT/worktree-$name"
     [[ -d "$wt/code" ]] || die "Remote worktree not found: $wt"
 
-    acquire_lock "$name" "$force"
-
     info "Stopping any running deployment..."
     sf sut stop 2>/dev/null || true
+
+    acquire_lock "$name" "$force"
 
     unmount_all
     mount_worktree "$wt/code" "$wt/artifacts"
@@ -225,10 +227,10 @@ cmd_remote_activate() {
 }
 
 cmd_remote_deactivate() {
-    acquire_lock "main" false 2>/dev/null || true
-
     info "Stopping any running deployment..."
     sf sut stop 2>/dev/null || true
+
+    acquire_lock "main" false
 
     unmount_all
     mount_worktree "$REMOTE_MAIN/code" "$REMOTE_MAIN/artifacts"
