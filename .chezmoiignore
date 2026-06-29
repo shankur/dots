@@ -1,6 +1,6 @@
 {{- if eq .chezmoi.os "darwin" }}
-# Worktree tools are only for cloud workspaces (Linux)
-.local/bin/worktree
+# Cloud-workspace tools are Linux-only; never deploy to the mac
+.local/bin/snowflake-mount
 {{- else }}
 # jarvis runs only on the local mac, never on cloud workspaces (Linux).
 # The encrypted config needs the age key (key.txt), which only exists on the mac;
@@ -12,3 +12,21 @@
 .jarvis/jarvis.sqlite*
 .jarvis/worktrees
 .jarvis/ssh
+
+# codex: manage only AGENTS.md — never runtime state, machine/Koi-managed config, or secrets
+.codex/*.sqlite*
+.codex/sessions
+.codex/shell_snapshots
+.codex/skills
+.codex/tmp
+.codex/.tmp
+.codex/logs*
+.codex/history.jsonl
+.codex/config.toml
+.codex/hooks.json
+.codex/installation_id
+.codex/.personality_migration
+.codex/.sfc_prodsec_ai_policy_accepted
+.codex/goals_*
+.codex/memories_*
+.codex/state_*
