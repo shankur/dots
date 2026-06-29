@@ -6,6 +6,8 @@
 # The encrypted config needs the age key (key.txt), which only exists on the mac;
 # ignoring the whole dir here keeps chezmoi from trying to decrypt it.
 .jarvis
+# VSCode GUI settings are macOS-only here; Linux cloud workspaces use Remote/server settings.
+Library/Application Support/Code/**
 {{- end }}
 
 # jarvis: never manage runtime state (DB holds transcripts/diffs, worktrees are large, ssh sockets are live)

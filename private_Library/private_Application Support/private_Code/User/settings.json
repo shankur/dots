@@ -1,0 +1,115 @@
+{
+  "C_Cpp.autocompleteAddParentheses": true,
+  "[python]": {
+    "editor.formatOnType": true
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
+  },
+  "bazel.enableCodeLens": true,
+  "cmake.configureOnOpen": true,
+  "cmake.exportCompileCommandsFile": false,
+  "cmake.loadCompileCommands": false,
+  "cmake.showOptionsMovedNotification": false,
+  "editor.fontFamily": "Monofur NF, Monaco, 'Courier New', monospace",
+  "editor.minimap.enabled": false,
+  "extensions.autoCheckUpdates": false,
+  "git.openRepositoryInParentFolders": "never",
+  "http.proxyAuthorization": null,
+  "notebook.lineNumbers": "on",
+  "notebook.output.scrolling": true,
+  "notebook.output.textLineLimit": 30000,
+  "redhat.telemetry.enabled": true,
+  "remote.SSH.defaultExtensions": [
+    "github.copilot",
+    "llvm-vs-code-extensions.vscode-clangd"
+  ],
+  "remote.SSH.enableAgentForwarding": true,
+  "security.workspace.trust.untrustedFiles": "open",
+  "snowflake.connectionsConfigFile": "/Users/ansharma/.snowflake/connections.toml",
+  "update.mode": "none",
+  "update.showReleaseNotes": false,
+  "window.zoomLevel": 2,
+  "workbench.colorTheme": "Catppuccin Latte",
+  "workbench.editorLargeFileConfirmation": 100,
+  "workbench.iconTheme": "catppuccin-latte",
+  "workbench.sideBar.location": "right",
+  "chat.agent.sandbox.advanced.runtime": {
+    "enableWeakerNestedSandbox": false
+  },
+  "claudeCode.preferredLocation": "panel",
+  "jarvis.authFixCommand": "sf auth login --login-services optional-service-credentials",
+  "jarvis.dashboard.githubRepo": "snowflake-eng/snowflake",
+  "jarvis.dashboard.precommitCheckName": "Precommit-Enforcer",
+  "jarvis.dashboard.ciSkipChecks": [
+    "Graphite / mergeability_check"
+  ],
+  "jarvis.dashboard.myPrsLimit": 10,
+  "jarvis.dashboard.reviewPrsLimit": 10,
+  "jarvis.dashboard.reviewExtraSearches": [
+    "state:open label:faster-streams -author:@me"
+  ],
+  "jarvis.dashboard.ciFetchCommand": "sf ci build list --page-size 10 -p snowflake--default-precommit -o json",
+  "jarvis.dashboard.ciEnrichCommand": "sf ci build get %s",
+  "jarvis.dashboard.snowtrailEnabled": true,
+  "jarvis.dashboard.snowtrailTitle": "Snowtrail Runs",
+  "jarvis.dashboard.snowtrailStatusKey": "STATUS",
+  "jarvis.dashboard.snowtrailGroupKey": "CONFIG_NAME",
+  "jarvis.dashboard.snowtrailColumns": [
+    {
+      "key": "DEPLOYMENT",
+      "header": "Deployment",
+      "width": 14
+    },
+    {
+      "key": "STATUS",
+      "header": "Status",
+      "width": 11
+    },
+    {
+      "key": "START_TIME",
+      "header": "Start",
+      "width": 10,
+      "relativeTime": true
+    },
+    {
+      "key": "ERROR_DIFFS",
+      "header": "Err",
+      "width": 7
+    },
+    {
+      "key": "RESULT_DIFFS",
+      "header": "Res",
+      "width": 7
+    },
+    {
+      "key": "PERF_DIFFS",
+      "header": "Perf",
+      "width": 7
+    },
+    {
+      "key": "CONFIG_NAME",
+      "header": "Config",
+      "width": 20
+    }
+  ],
+  "jarvis.dashboard.snowtrailSql": "SELECT job_name AS JOB_NAME, deployment AS DEPLOYMENT, status AS STATUS, start_time AS START_TIME, end_time AS END_TIME, tags:\"CONFIG_NAME\"::varchar AS CONFIG_NAME, job_regressions:\"error_diff\"::number AS ERROR_DIFFS, job_regressions:\"result_diff\"::number AS RESULT_DIFFS, job_regressions:\"perf_diff\"::number AS PERF_DIFFS FROM snowtrail.snowtrail_3.jobs WHERE ldap = '$USER' AND (start_time >= {{SINCE}} OR end_time >= {{SINCE}}) ORDER BY start_time DESC",
+  "jarvis.dashboard.snowtrailWindowDays": 30,
+  "workbench.preferredDarkColorTheme": "Catppuccin Latte",
+  "workbench.preferredLightColorTheme": "Catppuccin Mocha",
+  "workbench.editor.autoLockGroups": {
+    "agentSessionsWelcomePage": true
+  },
+  "editor.fontSize": 10,
+  "chat.editor.fontSize": 10,
+  "chat.fontSize": 10,
+  "debug.console.fontSize": 10,
+  "terminal.integrated.fontSize": 10,
+  "markdown.preview.fontSize": 10,
+  "mssql.resultsFontSize": 10,
+  "editor.fontVariations": false,
+  "jdk.telemetry.enabled": false,
+  "workbench.activityBar.location": "hidden",
+  "chatgpt.cliExecutable": "/Users/ansharma/.local/bin/sf-ai-codex",
+  "chatgpt.commentCodeLensEnabled": false
+}
