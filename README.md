@@ -211,6 +211,47 @@ chezmoi edit ~/.zshrc
 chezmoi data
 ```
 
+## 🗂️ Managing Projects (VSCode workspaces + Dock stack)
+
+A small generator turns a **curated list of repos** into VSCode multi-root
+workspaces and a macOS Dock **Projects** stack, so you can launch any project
+with a click.
+
+**The pieces (all chezmoi-managed):**
+- `dot_config/projects-workspace/repos` — the list of projects to track
+- `dot_local/bin/executable_gen-projects-workspace` — the generator (Python)
+- `run_onchange_after_setup-projects-dock.sh.tmpl` — adds the Dock stack (macOS, idempotent)
+
+**Choose which projects appear:**
+```bash
+chezmoi edit ~/.config/projects-workspace/repos   # one entry per line
+gen-projects-workspace                            # rebuild the workspaces
+```
+Each line is either a **bare repo name** under `~/Projects` (e.g.
+`cortex-code-eval`) or an **explicit path** (e.g. `~/.local/share/chezmoi`).
+`#` starts a comment. Delete or empty the file to track *every* git repo under
+`~/Projects`.
+
+**What gets generated** (into `~/Projects/_workspaces/`):
+- `all-repos.code-workspace` — every tracked project as one root (open all).
+- `<name>.code-workspace` — one per tracked project, so each appears
+  individually in the Dock stack. For a repo with multiple git worktrees (e.g.
+  `snowflake`) it lists the `main` clone + each worktree as its own root.
+
+Both files seed `workbench.sideBar.location: left` and stale entries are pruned.
+
+**The Dock stack** is set up automatically by `chezmoi apply` on macOS: a
+**Projects** stack pointing at `~/Projects/_workspaces/` (list view, sorted by
+name), shown with the **VS Code logo**. Click it → pick a workspace → it opens
+in VSCode. It also points `.code-workspace` files at VS Code (via an
+extension-based LaunchServices handler — `duti` can't, since these files have
+only a dynamic UTI). The step is idempotent (re-running never duplicates it) and
+a no-op on Linux. To remove the stack, drag it off the Dock.
+
+**Stays current automatically:** the `wt` worktree helper reruns the generator
+on `wt create` / `checkout` / `remove`, so worktree changes appear in the stack
+with no manual step.
+
 ## 🌍 Supported Platforms
 
 ✅ **macOS** (Apple Silicon + Intel)

@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Generate VSCode workspaces for selected projects, for use as a Dock stack.
+
+Writes into <BASE>/_workspaces/:
+  - all-repos.code-workspace  — every tracked project as one root (open all).
+  - <name>.code-workspace      — one per tracked project (single root, or for a
+    repo with multiple git worktrees its main clone + each worktree as a root).
+
+Tracked projects come from ~/.config/projects-workspace/repos (one entry per
+line, '#' comments). Each entry is either a bare repo name (resolved under
+BASE) or an explicit path (e.g. ~/.local/share/chezmoi). If that file is
+absent/empty, every git repo found directly under BASE is tracked.
+
+Usage:
+    gen-projects-workspace [BASE_DIR] [MAIN_OUTPUT_FILE]
+
+Defaults: BASE_DIR=~/Projects
+          MAIN_OUTPUT_FILE=~/Projects/_workspaces/all-repos.code-workspace
+
+Re-run any time you create/remove a worktree or edit the project list.
+"""
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+BASE = Path(os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/Projects"))
+WS_DIR = BASE / "_workspaces"
+OUT = (Path(os.path.expanduser(sys.argv[2])) if len(sys.argv) > 2
+       else WS_DIR / "all-repos.code-workspace")
+INCLUDE_FILE = Path(os.path.expanduser("~/.config/projects-workspace/repos"))
+
+# Seed new workspaces with this; existing files keep whatever settings they have.
+DEFAULT_SETTINGS = {"workbench.sideBar.location": "left"}
+
+
+def tracked_projects():
+    """Return [Path] of tracked git projects.
+
+    If the include file exists it is authoritative: each line is a bare name
+    (resolved under BASE) or an explicit/expanded path. Otherwise every git
+    repo directly under BASE is tracked. Non-git paths are dropped.
+    """
+    if INCLUDE_FILE.exists():
+        paths = []
+        for line in INCLUDE_FILE.read_text().splitlines():
+            line = line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            p = Path(os.path.expanduser(line))
+            if not p.is_absolute():
+                p = BASE / line
+            paths.append(p)
+    else:
+        paths = [c for c in BASE.iterdir() if c.is_dir()]
+    paths = [p for p in paths if (p / ".git").exists()]
+    return sorted(paths, key=lambda p: p.name.lower())
+
+
+def worktrees(repo: Path):
+    """Return [{path, branch}] for a repo (main worktree first), [] on failure."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(repo), "worktree", "list", "--porcelain"],
+            capture_output=True, text=True, check=True).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+    trees, cur = [], {}
+    for line in out.splitlines():
+        if line.startswith("worktree "):
+            cur = {"path": line[len("worktree "):]}
+        elif line.startswith("branch "):
+            cur["branch"] = line.rsplit("/", 1)[-1]
+        elif line.startswith("detached"):
+            cur["branch"] = "(detached)"
+        elif line == "" and cur:
+            trees.append(cur)
+            cur = {}
+    if cur:
+        trees.append(cur)
+    return trees
+
+
+def write_workspace(path: Path, folders):
+    """Write a .code-workspace, preserving existing settings (or seeding defaults)."""
+    settings = dict(DEFAULT_SETTINGS)
+    if path.exists():
+        try:
+            settings = json.loads(path.read_text()).get("settings", settings)
+        except (json.JSONDecodeError, OSError):
+            pass
+    path.write_text(json.dumps({"folders": folders, "settings": settings}, indent=2) + "\n")
+
+
+WS_DIR.mkdir(parents=True, exist_ok=True)
+main_folders = []
+repo_workspaces = []
+written = set()
+for proj in tracked_projects():
+    name = proj.name
+    main_folders.append({"name": name, "path": str(proj)})  # one root in the combined ws
+
+    # One workspace file per project so each appears individually in the Dock stack.
+    # Skip ephemeral worktrees Claude Code creates under .claude/worktrees/.
+    trees = [t for t in worktrees(proj) if "/.claude/worktrees/" not in t["path"]]
+    if len(trees) <= 1:
+        wt_folders = [{"name": name, "path": str(proj)}]
+    else:
+        real_main = os.path.realpath(str(proj))
+        wt_folders = []
+        for t in trees:
+            is_main = os.path.realpath(t["path"]) == real_main
+            label = "main" if is_main else (t.get("branch") or os.path.basename(t["path"]))
+            wt_folders.append({"name": label, "path": t["path"]})
+    ws = WS_DIR / f"{name}.code-workspace"
+    write_workspace(ws, wt_folders)
+    written.add(ws.resolve())
+    repo_workspaces.append((ws, len(wt_folders)))
+
+write_workspace(OUT, main_folders)
+written.add(OUT.resolve())
+
+# Prune stale workspace files so the Dock stack only shows current ones.
+for f in WS_DIR.glob("*.code-workspace"):
+    if f.resolve() not in written:
+        f.unlink()
+
+print(f"Wrote {OUT}  ({len(main_folders)} projects)")
+for ws, n in repo_workspaces:
+    print(f"Wrote {ws}  ({n} worktree roots)")

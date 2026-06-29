@@ -1,0 +1,13 @@
+# Projects to include in the generated VSCode workspaces (~/Projects/_workspaces/).
+# One entry per line; '#' starts a comment. Each entry is either:
+#   - a bare repo name under ~/Projects   (e.g. cortex-code-eval), or
+#   - an explicit path                    (e.g. ~/.local/share/chezmoi)
+# Delete or empty this file to track every git repo found under ~/Projects.
+cortex-code-eval
+cortex-code-skills
+dev-config
+parameter-automation-production
+sis-datascience
+snowflake
+snowflake-prod-docs
+~/.local/share/chezmoi
