@@ -13,24 +13,26 @@ if ! command -v sf &> /dev/null; then
     exit 0
 fi
 
-# Resolve the snowflake repo checkout (layout changed: snowflake-base/worktrees → /home/repo/snowflake).
+# Target repo for sf mcp add (writes .mcp.json + .cursor/mcp.json in cwd).
+{{- if eq .chezmoi.os "darwin" }}
 TRUNK_DIR=""
-for d in \
-    {{- if hasKey . "claude_sessions" -}}
-    "{{ .claude_sessions.cwd }}" \
-    {{- end -}}
-    "/home/repo/snowflake" \
-    "$HOME/Snowflake/trunk" \
-    "$HOME/Projects/snowflake"; do
+for d in "$HOME/Projects/snowflake" "$HOME/Snowflake/trunk"; do
     if [ -d "$d" ]; then
         TRUNK_DIR="$d"
         break
     fi
 done
 if [ -z "$TRUNK_DIR" ]; then
-    echo "⚠️  Snowflake repo not found (tried /home/repo/snowflake, ~/Snowflake/trunk, ~/Projects/snowflake), skipping MCP setup"
+    echo "⚠️  Snowflake repo not found (tried ~/Projects/snowflake, ~/Snowflake/trunk), skipping MCP setup"
     exit 0
 fi
+{{- else }}
+TRUNK_DIR="/home/repo/snowflake"
+if [ ! -d "$TRUNK_DIR" ]; then
+    echo "⚠️  $TRUNK_DIR not found, skipping MCP setup"
+    exit 0
+fi
+{{- end }}
 echo "  Using repo: $TRUNK_DIR"
 
 cd "$TRUNK_DIR"
