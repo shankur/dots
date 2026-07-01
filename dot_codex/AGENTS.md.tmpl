@@ -58,8 +58,8 @@ wt create <name> [--base <b>] [--sparse <path>...]        # NEW branch as a (spa
 wt checkout <remote-branch> [--name <dir>] [--sparse ...] # worktree from an EXISTING origin branch (alias: co)
 wt use [<workspace>|--auto]   # bind this worktree to a workspace (no name / --auto = pick a free RUNNING one); starts it if stopped
 wt deploy [--no-clean] [--force]      # sync this worktree (incl. uncommitted+untracked) onto the workspace
-wt build|redeploy|setup [--force]     # deploy, then sf sut build|redeploy|setup (in the durable tmux session)
-wt attach                     # reattach to the running build's tmux session after an SSH drop
+wt build|redeploy|setup [--force] [--attach]  # deploy, then sf sut … (detached tmux; --attach to follow live)
+wt attach                     # attach to the running build's remote tmux session
 wt ssh [cmd...]               # shell/command at the build path
 wt status                     # local dirty state · workspace HEAD · active worktree (lock owner) · GS up/down (snow ps)
 wt deactivate [--force]       # restore the workspace clone to 'main' and release the lock
@@ -121,8 +121,8 @@ Code can only be built, deployed, and tested on the workspace. After `wt deploy`
 - A workspace is **claimed** by the first worktree that deploys to it (owner stored in
   `.wt.lock`). Another worktree's deploy is refused with the owner shown — release with
   `wt deactivate` or override with `--force`. One SUT per workspace.
-- `build`/`redeploy`/`setup` run inside a remote **tmux** session named `wt`, so they
-  survive SSH drops; `wt attach` to reattach (Ctrl-b d to detach).
+- `build`/`redeploy`/`setup` run inside a remote **tmux** session named `wt` (detached by default — use `--attach` or `wt attach` to follow live); they
+  survive SSH drops.
 - `wt` runs `sf sut stop` once per activation — on the **first** `build`/`redeploy`/`setup`
   after a worktree claims a workspace, and on `deactivate`. Plain `wt deploy` never stops the
   SUT (it must not disrupt a SUT someone may be using via the UI); reruns don't re-stop.

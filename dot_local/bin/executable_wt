@@ -14,9 +14,9 @@
 #   wt checkout <remote-branch> [--name <dir>] [--sparse <path>...]   Worktree from an EXISTING remote branch.
 #   wt use [<workspace>|--auto]             Bind this worktree to a workspace (no name = pick a free one; starts it if stopped).
 #   wt deploy [--no-clean] [--force]        Sync this worktree (incl. uncommitted) onto the workspace.
-#   wt build / redeploy / setup [--force]   deploy, then sf sut build / redeploy / setup (in remote tmux).
+#   wt build / redeploy / setup [--force] [--attach]   deploy, then sf sut … (detached tmux by default).
 #   wt ssh [cmd...]                         SSH into the build path (login shell if no cmd).
-#   wt attach                               Reattach to the running build's remote tmux session.
+#   wt attach                               Attach to the running build's remote tmux session.
 #   wt status                               Show target / dirty state / what the workspace is on + lock owner.
 #   wt deactivate [--force]                 Restore the workspace's main clone to 'main' and release the lock.
 #   wt sync                                 Fetch + fast-forward the local main clone.
@@ -380,17 +380,23 @@ cmd_deploy() {
     info "Build with: wt build   (or redeploy / setup)"
 }
 
-cmd_sut() {  # $1 = build|redeploy|setup ; remaining args may include --force
+cmd_sut() {  # $1 = build|redeploy|setup ; remaining args: [--force] [--attach]
     local kind="$1"; shift
-    local force=false
-    [[ "${1:-}" == "--force" || "${1:-}" == "-f" ]] && force=true
+    local force=false attach=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=true; shift ;;
+            --attach|-a) attach=true; shift ;;
+            *) die "Usage: wt $kind [--force] [--attach]" ;;
+        esac
+    done
     do_deploy true "$force"
     # On the FIRST build/redeploy/setup since activation, stop the previous SUT once
     # (consumes the pending-stop marker set by do_deploy's fresh claim). Subsequent
     # reruns skip it. Runs inside the durable tmux session, before sf sut <kind>.
     local stop_prefix=""
     if remote_consume_pending; then stop_prefix="sf sut stop && "; fi
-    run_durable "$kind" "$stop_prefix"
+    run_durable "$kind" "$stop_prefix" "$attach"
 }
 
 # Returns 0 (and clears the marker) iff a stop is pending for this worktree's claim.
@@ -404,21 +410,25 @@ exit 1
 REMOTE
 }
 
-# Run a long sf sut command in a persistent remote tmux session so it survives SSH
-# drops. Detached-launch + attach; reattach later with `wt attach`. The remote
-# command is passed as an argument (not stdin) so tmux attach keeps the TTY.
-# $2 = optional command prefix (e.g. "sf sut stop && ") to run before sf sut <kind>.
+# Run sf sut in a persistent remote tmux session (survives SSH drops). By default
+# launches detached and returns; pass attach=true to attach interactively (old behavior).
+# Reattach later with `wt attach`. $3 = attach (true/false).
 run_durable() {
-    local kind="$1" prefix="${2:-}" sess="wt"
+    local kind="$1" prefix="${2:-}" attach="${3:-false}" sess="wt"
     local sut_cmd="cd $(printf '%q' "$WS_MAIN") && ${prefix}sf sut $kind"
-    info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME."
-    info "Survives SSH drops — detach with Ctrl-b d, reattach with 'wt attach'."
     local rcmd
     rcmd="tmux has-session -t $sess 2>/dev/null && tmux kill-session -t $sess
 tmux new-session -d -s $sess
-tmux send-keys -t $sess $(printf '%q' "$sut_cmd") Enter
+tmux send-keys -t $sess $(printf '%q' "$sut_cmd") Enter"
+    if [[ "$attach" == true ]]; then
+        info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME (attaching)."
+        rcmd="$rcmd
 exec tmux attach -t $sess"
-    exec ssh -t "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
+        exec ssh -t "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
+    fi
+    info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME (detached)."
+    ssh "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
+    info "Build running in tmux session '$sess'. Follow with: wt attach"
 }
 
 cmd_attach() {
