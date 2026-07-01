@@ -410,25 +410,26 @@ exit 1
 REMOTE
 }
 
-# Run sf sut in a persistent remote tmux session (survives SSH drops). By default
-# launches detached and returns; pass attach=true to attach interactively (old behavior).
+# Run sf sut in a persistent remote tmux session (survives SSH drops). Always creates
+# a detached tmux session; only skips interactive attach unless attach=true.
 # Reattach later with `wt attach`. $3 = attach (true/false).
 run_durable() {
     local kind="$1" prefix="${2:-}" attach="${3:-false}" sess="wt"
     local sut_cmd="cd $(printf '%q' "$WS_MAIN") && ${prefix}sf sut $kind"
     local rcmd
     rcmd="tmux has-session -t $sess 2>/dev/null && tmux kill-session -t $sess
-tmux new-session -d -s $sess
-tmux send-keys -t $sess $(printf '%q' "$sut_cmd") Enter"
+tmux new-session -d -s $sess bash -lc $(printf '%q' "$sut_cmd")
+tmux has-session -t $sess"
     if [[ "$attach" == true ]]; then
-        info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME (attaching)."
+        info "Starting tmux '$sess' on $WS_NAME and attaching."
         rcmd="$rcmd
 exec tmux attach -t $sess"
         exec ssh -t "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
     fi
-    info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME (detached)."
-    ssh "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
-    info "Build running in tmux session '$sess'. Follow with: wt attach"
+    info "Starting detached tmux '$sess' on $WS_NAME (${prefix}sf sut $kind)."
+    ssh "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")" \
+        || die "Failed to start tmux session '$sess' on $WS_NAME"
+    info "Build running in tmux session '$sess' (survives SSH drop). Follow with: wt attach"
 }
 
 cmd_attach() {
