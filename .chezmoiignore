@@ -1,14 +1,19 @@
-{{- if eq .chezmoi.os "darwin" }}
-# Cloud-workspace tools are Linux-only; never deploy to the mac
-.local/bin/snowflake-mount
-{{- else }}
+{{- if ne .chezmoi.os "darwin" }}
 # jarvis runs only on the local mac, never on cloud workspaces (Linux).
 # The encrypted config needs the age key (key.txt), which only exists on the mac;
 # ignoring the whole dir here keeps chezmoi from trying to decrypt it.
 .jarvis
-# VSCode GUI settings are macOS-only here; Linux cloud workspaces use Remote/server settings.
+# VSCode/Cursor GUI settings are macOS-only here; Linux cloud workspaces use Remote/server settings.
 Library/Application Support/Code/**
+Library/Application Support/Cursor/**
 {{- end }}
+
+# cursor: never manage runtime state (MCP caches, transcripts, extensions, app sync metadata)
+.cursor/projects/**
+.cursor/**/agent-transcripts/**
+.cursor/extensions/**
+.cursor/skills-cursor/.sync-manifest.json
+.cursor/unified_repo_list.json
 
 # jarvis: never manage runtime state (DB holds transcripts/diffs, worktrees are large, ssh sockets are live)
 .jarvis/jarvis.sqlite*

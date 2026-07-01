@@ -1,6 +1,11 @@
+---
+description: Personal orientation from ~/.claude/CLAUDE.md — wt workflow, behavioral guidelines, PR format
+alwaysApply: true
+---
+
 > **NEVER HAND-WAVE: MAKE SURE THAT YOUR ASSESSMENT IS CORRECT BEFORE PRESENTING OR ACTING UPON THEM**
 
-> **EVERY SESSION MUST FULLY RESPECT BOTH THIS FILE (`~/.claude/CLAUDE.md`) AND THE PROJECT-LEVEL `CLAUDE.md`. Read both at session start. Rules here are non-negotiable — do not rationalize deviations.**
+> **EVERY SESSION MUST FULLY RESPECT BOTH THIS USER RULE AND THE PROJECT-LEVEL `CLAUDE.md`. Read both at session start. Rules here are non-negotiable — do not rationalize deviations.**
 
 ---
 
@@ -10,12 +15,12 @@ You have a personal knowledge base at ~/claude-kb/. When answering questions abo
 
 When creating new commands or skills:
 - General/portable skills: ~/.local/share/chezmoi/dot_claude/skills/<name>/SKILL.md (managed by chezmoi, deployed everywhere)
+- Cursor skills: ~/.local/share/chezmoi/dot_cursor/skills/<name>/ or dot_cursor/skills-cursor/<name>/
 - Project-specific skills: ~/claude-kb/skills/<name>/ (auto-symlinked into ~/.claude/skills/ when claude-kb exists)
 - Commands: ~/claude-kb/commands/<name>.md
 
 ---
 
-{{ if eq .profile "work" -}}
 ## wt — Cloud Workspace Workflow
 
 `wt` (`~/.local/bin/wt`) is the CLI for developing the Snowflake monorepo on
@@ -132,7 +137,6 @@ Code can only be built, deployed, and tested on the workspace. After `wt deploy`
 
 ---
 
-{{ end -}}
 ## Behavioral Guidelines
 
 Reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
@@ -182,7 +186,6 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-{{ if eq .profile "work" -}}
 ## PR Format: snowflake-eng/snowflake
 
 ### Title
@@ -227,5 +230,3 @@ The correct iteration loop is:
 5. Only when all tests pass on the remote SUT, start a precommit: `sf ci build start default-precommit`
 
 **Do NOT start a precommit to discover test failures.** Test locally on the SUT first. Precommit is the final gate before the PR is ready, not a debugging tool.
-
-{{ end -}}

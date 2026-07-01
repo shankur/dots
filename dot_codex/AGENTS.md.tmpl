@@ -24,11 +24,10 @@ and deploy on a remote cloud workspace. It is a single local bash script — not
 to install on the workspace.
 
 **Model — "reset main in place":** code is transferred **peer-to-peer over SSH**
-(only the git delta crosses the wire). The workspace's main clone is already
-bind-mounted at the build path `/home/repo/snowflake`, so `wt deploy` resets
-that clone (detached) to your synced commit — your code is instantly live for
-`sf sut` — and `wt deactivate` restores it to `main`. No mounts/sudo from the
-client side; one workspace builds one feature at a time (guarded by a lock).
+(only the git delta crosses the wire). `wt deploy` resets the workspace clone at
+`/home/repo/snowflake` (detached) to your synced commit — your code is instantly live for
+`sf sut` — and `wt deactivate` restores it to `main`. Pure local client script; one
+workspace builds one feature at a time (guarded by a lock).
 
 ### Layout
 
@@ -37,8 +36,7 @@ client side; one workspace builds one feature at a time (guarded by a lock).
 | `~/Projects/snowflake` | Read-only main clone (`WT_LOCAL_MAIN`; never edited) |
 | `~/Projects/snowflake-worktree/worktree-<name>/` | Local worktree (`WT_LOCAL_ROOT`) |
 | `<worktree>/.git/.../wt.conf` | Per-worktree state (bound workspace + remote clone path) |
-| `<ws>:/home/repo/snowflake-worktree/main/code` | Remote canonical clone (`WT_REMOTE_MAIN`) — push target + reset target |
-| `<ws>:/home/repo/snowflake` | Remote build path (`WT_REMOTE_BUILD`) — bind-mount of the clone; where `sf sut` runs |
+| `<ws>:/home/repo/snowflake` | Workspace clone (`WT_REMOTE_MAIN`) — push target, reset target; where `sf sut` runs |
 | `<ws>:/home/repo/snowflake-worktree/.wt.lock` | Per-workspace owner lock |
 | `<ws>` tmux session `wt` | Durable session that runs `sf sut …` |
 
@@ -46,7 +44,7 @@ client side; one workspace builds one feature at a time (guarded by a lock).
 
 Precedence: **ambient env var > config file > built-in default**.
 - Config file: `~/.config/wt/config` (override path with `$WT_CONFIG`), a sourced shell snippet.
-- Variables: `WT_LOCAL_MAIN`, `WT_LOCAL_ROOT`, `WT_REMOTE_MAIN`, `WT_REMOTE_BUILD`.
+- Variables: `WT_LOCAL_MAIN`, `WT_LOCAL_ROOT`, `WT_REMOTE_MAIN`.
 - `wt config` prints resolved values; `wt config --init` scaffolds the file pre-filled.
 - One-off: `WT_LOCAL_ROOT=~/wt wt create foo`.
 
