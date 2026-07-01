@@ -37,7 +37,7 @@ workspace builds one feature at a time (guarded by a lock).
 | `~/Projects/snowflake-worktree/worktree-<name>/` | Local worktree (`WT_LOCAL_ROOT`) |
 | `<worktree>/.git/.../wt.conf` | Per-worktree state (bound workspace + remote clone path) |
 | `<ws>:/home/repo/snowflake` | Workspace clone (`WT_REMOTE_MAIN`) — push target, reset target; where `sf sut` runs |
-| `<ws>:/home/repo/snowflake-worktree/.wt.lock` | Per-workspace owner lock |
+| `<ws>:/home/repo/.wt.lock` | Per-workspace owner lock |
 | `<ws>` tmux session `wt` | Durable session that runs `sf sut …` |
 
 ### Configuration

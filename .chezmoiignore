@@ -3,6 +3,8 @@
 # The encrypted config needs the age key (key.txt), which only exists on the mac;
 # ignoring the whole dir here keeps chezmoi from trying to decrypt it.
 .jarvis
+# wt is a local Mac CLI for driving cloud workspaces; never deploy to Linux hosts.
+.local/bin/wt
 # VSCode/Cursor GUI settings are macOS-only here; Linux cloud workspaces use Remote/server settings.
 Library/Application Support/Code/**
 Library/Application Support/Cursor/**

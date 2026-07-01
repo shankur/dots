@@ -1,0 +1,597 @@
+#!/bin/bash
+# wt — develop locally in a (sparse) git worktree; build/deploy on an sf cloud workspace.
+#
+# Model: edit locally; the workspace clone at /home/repo/snowflake is reset in place
+# to your synced commit, so your code is instantly live for `sf sut` builds.
+# `wt deactivate` restores it to main. Code is
+# transferred peer-to-peer over SSH (only the git delta crosses the wire — sparse-safe,
+# no origin round-trip; uncommitted + untracked work included). Targets EXISTING
+# workspaces (starts a stopped one); never creates/destroys them. Pure local script.
+#
+# Commands (run from inside a local git worktree unless noted):
+#   wt ls                                   List workspaces; mark this worktree's target. (anywhere)
+#   wt create <name> [--base <b>] [--sparse <path>...]   Make a local (sparse) worktree on a NEW branch.
+#   wt checkout <remote-branch> [--name <dir>] [--sparse <path>...]   Worktree from an EXISTING remote branch.
+#   wt use [<workspace>|--auto]             Bind this worktree to a workspace (no name = pick a free one; starts it if stopped).
+#   wt deploy [--no-clean] [--force]        Sync this worktree (incl. uncommitted) onto the workspace.
+#   wt build / redeploy / setup [--force]   deploy, then sf sut build / redeploy / setup (in remote tmux).
+#   wt ssh [cmd...]                         SSH into the build path (login shell if no cmd).
+#   wt attach                               Reattach to the running build's remote tmux session.
+#   wt status                               Show target / dirty state / what the workspace is on + lock owner.
+#   wt deactivate [--force]                 Restore the workspace's main clone to 'main' and release the lock.
+#   wt sync                                 Fetch + fast-forward the local main clone.
+#   wt config [--init]                      Show resolved local/remote paths (or scaffold the config file).
+#   wt remove [--force]                     Remove the local worktree + mapping.
+#
+# Global flag (any position): -w/--worktree <name>  act on that worktree (under
+#   $WT_LOCAL_ROOT) instead of the current directory. Accepts a bare name, a
+#   worktree-<name> dir name, or a path. Applies to use/deploy/build/redeploy/
+#   setup/ssh/attach/status/deactivate/remove.
+
+set -euo pipefail
+
+# ── Configuration ───────────────────────────────────────────────────────────────
+# Precedence: ambient env var > config file > built-in default.
+# Config file (shell snippet) defaults to ~/.config/wt/config; override with
+# $WT_CONFIG. It may set any of the WT_* variables below. See `wt config`.
+_env_local_main="${WT_LOCAL_MAIN:-}"
+_env_local_root="${WT_LOCAL_ROOT:-}"
+_env_remote_main="${WT_REMOTE_MAIN:-}"
+_env_remote_build="${WT_REMOTE_BUILD:-}"
+WT_CONFIG="${WT_CONFIG:-$HOME/.config/wt/config}"
+[[ -f "$WT_CONFIG" ]] && . "$WT_CONFIG"
+
+LOCAL_MAIN="${_env_local_main:-${WT_LOCAL_MAIN:-$HOME/Projects/snowflake}}"          # original clone (never edited directly)
+LOCAL_ROOT="${_env_local_root:-${WT_LOCAL_ROOT:-$HOME/Projects/snowflake-worktree}}" # where local worktrees live
+WS_MAIN_DEFAULT="${_env_remote_main:-${WT_REMOTE_MAIN:-/home/repo/snowflake}}"  # remote workspace clone
+WS_BUILD="${_env_remote_build:-${WT_REMOTE_BUILD:-$WS_MAIN_DEFAULT}}"           # where sf sut runs (same as clone)
+
+die()  { echo "error: $*" >&2; exit 1; }
+info() { echo "==> $*"; }
+warn() { echo "warning: $*" >&2; }
+
+# Keep the VSCode multi-root workspace in sync after worktrees change (best-effort).
+refresh_workspace() {
+    command -v gen-projects-workspace >/dev/null 2>&1 || return 0
+    gen-projects-workspace >/dev/null 2>&1 || warn "could not refresh VSCode workspace file"
+}
+
+# ── git worktree context + per-worktree state ───────────────────────────────────
+require_worktree() {
+    if [[ -n "${WT_OVERRIDE:-}" ]]; then
+        # -w/--worktree <name|dir|path>: resolve without relying on cwd.
+        local cand
+        case "$WT_OVERRIDE" in
+            */*) cand="$WT_OVERRIDE" ;;                                  # a path
+            *)   if   [[ -d "$LOCAL_ROOT/worktree-$WT_OVERRIDE" ]]; then cand="$LOCAL_ROOT/worktree-$WT_OVERRIDE"
+                 elif [[ -d "$LOCAL_ROOT/$WT_OVERRIDE" ]];          then cand="$LOCAL_ROOT/$WT_OVERRIDE"
+                 else cand="$LOCAL_ROOT/worktree-$WT_OVERRIDE"; fi ;;     # default (for error msg)
+        esac
+        WT_TOP=$(git -C "$cand" rev-parse --show-toplevel 2>/dev/null) \
+            || die "No git worktree for --worktree '$WT_OVERRIDE' (looked at $cand)."
+    else
+        WT_TOP=$(git rev-parse --show-toplevel 2>/dev/null) \
+            || die "Not inside a git worktree. cd into one, pass --worktree <name>, or 'wt create' one."
+    fi
+    META=$(git -C "$WT_TOP" rev-parse --git-path wt.conf)
+    case "$META" in /*) ;; *) META="$WT_TOP/$META" ;; esac
+}
+load_meta() { WS_NAME=""; WS_MAIN=""; WS_WARNED=""; [[ -f "$META" ]] && . "$META"; return 0; }
+save_meta() {
+    cat > "$META" <<EOF
+WS_NAME=$(printf '%q' "$WS_NAME")
+WS_MAIN=$(printf '%q' "$WS_MAIN")
+WS_WARNED=$(printf '%q' "$WS_WARNED")
+EOF
+}
+
+# ── workspace helpers ───────────────────────────────────────────────────────────
+ws_status() {  # echo STATUS for workspace $1 (empty if it does not exist)
+    sf ws ls -o json 2>/dev/null | python3 -c '
+import sys, json
+name = sys.argv[1]
+try:
+    for w in json.load(sys.stdin):
+        if w.get("name") == name:
+            print(w.get("status", "")); break
+except Exception:
+    pass
+' "$1"
+}
+
+ensure_running() {
+    local name="$1" st i
+    st=$(ws_status "$name")
+    [[ -n "$st" ]] || die "No workspace named '$name' (see: sf ws ls)."
+    if [[ "$st" != "RUNNING" ]]; then
+        info "Workspace '$name' is $st — starting it..."
+        sf ws start "$name"
+        for i in $(seq 1 60); do
+            st=$(ws_status "$name"); [[ "$st" == "RUNNING" ]] && break
+            sleep 5
+        done
+        [[ "$st" == "RUNNING" ]] || die "Workspace '$name' did not reach RUNNING (last: $st)."
+    fi
+}
+
+require_target() {
+    load_meta
+    [[ -n "$WS_NAME" ]] || die "No workspace bound to this worktree. Run: wt use <workspace>"
+    [[ -n "$WS_MAIN" ]] || WS_MAIN="$WS_MAIN_DEFAULT"
+    ensure_running "$WS_NAME"
+}
+
+cur_branch() {
+    git -C "$WT_TOP" symbolic-ref --quiet --short HEAD 2>/dev/null \
+        || echo "detached-$(git -C "$WT_TOP" rev-parse --short HEAD)"
+}
+
+# Stable identity of this local worktree — recorded as the workspace's owner so a
+# second agent/worktree can't silently reset main/code out from under this one.
+owner_token() { echo "${USER}@$(hostname -s):$WT_TOP"; }
+
+# Path of the owner lock on a workspace (parent of the remote clone).
+ws_lockfile() { echo "$(dirname "$WS_MAIN_DEFAULT")/.wt.lock"; }
+
+# How many local worktrees are bound to workspace $1 (reads each worktree's
+# wt.conf WS_NAME). Excludes the current worktree ($META). bash-3.2 safe.
+binding_count() {
+    local ws="$1" cnt=0 f n
+    shopt -s nullglob
+    for f in "$LOCAL_MAIN"/.git/worktrees/*/wt.conf "$LOCAL_MAIN"/.git/wt.conf; do
+        [[ "$f" == "${META:-}" ]] && continue
+        n=$( . "$f" 2>/dev/null; echo "${WS_NAME:-}" )
+        [[ "$n" == "$ws" ]] && cnt=$((cnt + 1))
+    done
+    shopt -u nullglob
+    echo "$cnt"
+}
+
+# Echo the best RUNNING workspace to bind: among those that are available (lock
+# empty or already owned by this worktree), the one with the FEWEST local
+# worktrees bound to it (load balancing). Fails (owners on stderr) if none free.
+pick_free_workspace() {
+    local me lock names n owner cnt best="" best_n=-1 claimed=""
+    me=$(owner_token)
+    lock=$(ws_lockfile)
+    names=$(sf ws ls -o json 2>/dev/null | python3 -c '
+import sys, json
+for w in json.load(sys.stdin):
+    if w.get("status") == "RUNNING":
+        print(w.get("name", ""))
+')
+    [[ -n "$names" ]] || { echo "  (no RUNNING workspaces — start one with: sf ws start <name>)" >&2; return 1; }
+    for n in $names; do
+        owner=$(ssh -o ConnectTimeout=8 "$n" "cat '$lock' 2>/dev/null" 2>/dev/null || true)
+        if [[ -n "$owner" && "$owner" != "$me" ]]; then
+            claimed+="  $n -> $owner"$'\n'; continue
+        fi
+        cnt=$(binding_count "$n")
+        if [[ "$best_n" -lt 0 || "$cnt" -lt "$best_n" ]]; then best="$n"; best_n="$cnt"; fi
+    done
+    if [[ -n "$best" ]]; then
+        echo "  ($best has the fewest worktrees bound: $best_n)" >&2
+        echo "$best"; return 0
+    fi
+    echo "All RUNNING workspaces are claimed:" >&2
+    printf '%s' "$claimed" >&2
+    return 1
+}
+
+# Map a remote-helper exit code to a friendly message and abort. $1=rc $2=output
+handle_lock_rc() {
+    local rc="$1" out="$2"
+    case "$rc" in
+        0)  return 0 ;;
+        75) die "Another wt operation holds the lock on '$WS_NAME'. Try again in a moment." ;;
+        76) die "Workspace '$WS_NAME' is claimed by: $(sed -n 's/^OWNED_BY://p' <<<"$out")
+       Run 'wt deactivate' there to release it, or re-run with --force to take it over." ;;
+        *)  die "Remote operation on '$WS_NAME' failed (rc=$rc):
+$out" ;;
+    esac
+}
+
+# ── commands ────────────────────────────────────────────────────────────────────
+cmd_ls() {
+    local cur=""
+    if WT_TOP=$(git rev-parse --show-toplevel 2>/dev/null); then
+        META=$(git -C "$WT_TOP" rev-parse --git-path wt.conf)
+        case "$META" in /*) ;; *) META="$WT_TOP/$META" ;; esac
+        load_meta; cur="$WS_NAME"
+    fi
+    echo "Cloud workspaces (sf ws ls):"
+    sf ws ls -o json | python3 -c '
+import sys, json
+cur = sys.argv[1]
+rows = json.load(sys.stdin)
+w = max([len(r.get("name", "")) for r in rows] + [4])
+for r in rows:
+    mark = " *" if r.get("name") == cur else "  "
+    print("%s %-*s  %-9s  %s" % (mark, w, r.get("name", ""), r.get("status", ""), r.get("region", "")))
+' "$cur"
+    [[ -n "$cur" ]] && echo "(* = bound to this worktree)"
+    return 0
+}
+
+cmd_create() {
+    local name="" base="main"; local -a sparse=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --base|-b)   base="$2"; shift 2 ;;
+            --sparse|-s) shift; while [[ $# -gt 0 && "$1" != --* ]]; do sparse+=("$1"); shift; done ;;
+            *)           name="$1"; shift ;;
+        esac
+    done
+    [[ -n "$name" ]] || die "Usage: wt create <name> [--base <branch>] [--sparse <path>...]"
+    [[ -d "$LOCAL_MAIN/.git" ]] || die "Main clone not found at $LOCAL_MAIN"
+    local wt="$LOCAL_ROOT/worktree-$name"
+    [[ ! -e "$wt" ]] || die "Local worktree already exists: $wt"
+
+    mkdir -p "$LOCAL_ROOT"
+    info "Fetching origin (best-effort)..."
+    git -C "$LOCAL_MAIN" fetch --quiet origin 2>/dev/null || warn "fetch failed; using local '$base'"
+    info "Creating worktree '$name' from '$base'..."
+    git -C "$LOCAL_MAIN" worktree add --no-checkout -b "$name" "$wt" "$base"
+    if [[ ${#sparse[@]} -gt 0 ]]; then
+        info "Configuring sparse-checkout: ${sparse[*]}"
+        git -C "$wt" sparse-checkout init --cone
+        git -C "$wt" sparse-checkout set "${sparse[@]}"
+    fi
+    git -C "$wt" checkout
+    [[ -f "$LOCAL_MAIN/.mcp.json" ]] && ln -sf "$LOCAL_MAIN/.mcp.json" "$wt/.mcp.json"
+    echo ""
+    echo "Worktree '$name' created at $wt"
+    echo "  cd $wt && wt use <workspace> && wt build"
+    refresh_workspace
+}
+
+cmd_checkout() {
+    local branch="" name=""; local -a sparse=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --name|-n)   name="$2"; shift 2 ;;
+            --sparse|-s) shift; while [[ $# -gt 0 && "$1" != --* ]]; do sparse+=("$1"); shift; done ;;
+            *)           branch="$1"; shift ;;
+        esac
+    done
+    [[ -n "$branch" ]] || die "Usage: wt checkout <remote-branch> [--name <dir>] [--sparse <path>...]"
+    [[ -d "$LOCAL_MAIN/.git" ]] || die "Main clone not found at $LOCAL_MAIN"
+    [[ -n "$name" ]] || name="${branch//\//-}"          # dir-safe name; branch keeps its slashes
+    local wt="$LOCAL_ROOT/worktree-$name"
+    [[ ! -e "$wt" ]] || die "Local worktree already exists: $wt"
+
+    mkdir -p "$LOCAL_ROOT"
+    info "Fetching origin/$branch ..."
+    git -C "$LOCAL_MAIN" fetch origin "$branch" || die "Branch '$branch' not found on origin."
+
+    if git -C "$LOCAL_MAIN" show-ref --verify --quiet "refs/heads/$branch"; then
+        info "Local branch '$branch' already exists — checking it out in the worktree."
+        git -C "$LOCAL_MAIN" worktree add --no-checkout "$wt" "$branch"
+    else
+        info "Creating tracking branch '$branch' -> origin/$branch."
+        git -C "$LOCAL_MAIN" worktree add --no-checkout --track -b "$branch" "$wt" "origin/$branch"
+    fi
+    if [[ ${#sparse[@]} -gt 0 ]]; then
+        info "Configuring sparse-checkout: ${sparse[*]}"
+        git -C "$wt" sparse-checkout init --cone
+        git -C "$wt" sparse-checkout set "${sparse[@]}"
+    fi
+    git -C "$wt" checkout
+    [[ -f "$LOCAL_MAIN/.mcp.json" ]] && ln -sf "$LOCAL_MAIN/.mcp.json" "$wt/.mcp.json"
+    echo ""
+    echo "Worktree '$name' (branch '$branch') checked out at $wt"
+    echo "  cd $wt && wt use <workspace> && wt build"
+    refresh_workspace
+}
+
+cmd_use() {
+    require_worktree
+    local name="${1:-}"
+    if [[ -z "$name" || "$name" == "auto" || "$name" == "--auto" ]]; then
+        info "Auto-selecting a free workspace..."
+        name=$(pick_free_workspace) || die "No free RUNNING workspace available (see above / 'wt ls'). Pass an explicit name to override."
+        info "Selected free workspace: $name"
+    fi
+    ensure_running "$name"
+    info "Locating the workspace clone on '$name'..."
+    local main
+    main=$(ssh "$name" bash -ls <<REMOTE || true
+for p in "$WS_MAIN_DEFAULT" /home/repo/snowflake /home/repo/snowflake-worktree/main/code; do
+    if git -C "\$p" rev-parse --git-dir >/dev/null 2>&1; then echo "\$p"; exit 0; fi
+done
+REMOTE
+)
+    [[ -n "$main" ]] || die "Could not find snowflake clone on '$name' (tried $WS_MAIN_DEFAULT, /home/repo/snowflake)."
+    info "Workspace clone: $main"
+    load_meta
+    WS_NAME="$name"; WS_MAIN="$main"
+    if [[ "$WS_WARNED" != "1" ]]; then
+        warn "wt resets $name:$main in place — 'wt deploy' overwrites its checkout; 'wt deactivate' restores main."
+        WS_WARNED="1"
+    fi
+    save_meta
+    info "This worktree now targets '$name'. Push code with: wt deploy"
+}
+
+# Sync current worktree (tracked + untracked, incl. uncommitted) onto the workspace.
+# $1 = clean (true/false), $2 = force (true/false)
+do_deploy() {
+    local clean="${1:-true}" force="${2:-false}"
+    require_worktree
+    require_target
+    local branch; branch=$(cur_branch)
+
+    # Faithful transient commit (no side effects on the user's index/HEAD).
+    local tmpidx tree T
+    tmpidx=$(mktemp)
+    cp "$(git -C "$WT_TOP" rev-parse --git-path index)" "$tmpidx"
+    GIT_INDEX_FILE="$tmpidx" git -C "$WT_TOP" add -A
+    tree=$(GIT_INDEX_FILE="$tmpidx" git -C "$WT_TOP" write-tree)
+    rm -f "$tmpidx"
+    T=$(git -C "$WT_TOP" commit-tree "$tree" -p HEAD -m "wt: $branch @ $(date +%Y-%m-%dT%H:%M:%S)")
+
+    # Push only the missing objects into the workspace's clone (force plain ssh —
+    # git's global core.sshCommand=sf __ssh cannot reach workspace hosts). This is
+    # additive/atomic, so it is safe to do outside the lock.
+    info "Pushing delta to $WS_NAME:$WS_MAIN ..."
+    GIT_SSH_COMMAND=ssh git -C "$WT_TOP" push --no-verify "ssh://$WS_NAME$WS_MAIN" "+$T:refs/wt/$branch"
+
+    # Under a per-workspace lock: claim ownership, then detached-reset main/code to
+    # your commit so it is live at the build path. Refuses if another worktree owns it.
+    info "Applying on $WS_NAME (detached reset of $WS_MAIN) ..."
+    local out rc
+    set +e
+    out=$(ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "refs/wt/$branch" "$(owner_token)" "$force" "$clean" <<'REMOTE'
+set -e
+WS_MAIN="$1"; REF="$2"; OWNER="$3"; FORCE="$4"; CLEAN="$5"
+LOCK="$(dirname "$WS_MAIN")/.wt.lock"
+PENDING="$(dirname "$WS_MAIN")/.wt.sut-pending"
+exec 9>"$LOCK.flock"
+flock -w 30 9 || { echo "LOCKED"; exit 75; }
+owner="$(cat "$LOCK" 2>/dev/null || true)"
+if [ -n "$owner" ] && [ "$owner" != "$OWNER" ] && [ "$FORCE" != "true" ]; then
+    echo "OWNED_BY:$owner"; exit 76
+fi
+# Activation = a fresh claim (workspace was free or held by another worktree). Only
+# MARK that the previous SUT must be stopped — do NOT stop now: a plain `wt deploy`
+# just syncs code and must not kill a SUT others may be using through the UI. The
+# stop happens once, on the first build/redeploy/setup (see remote_consume_pending).
+if [ "$owner" != "$OWNER" ]; then printf '%s\n' "$OWNER" > "$PENDING"; fi
+printf '%s\n' "$OWNER" > "$LOCK"
+cd "$WS_MAIN"
+git symbolic-ref -q HEAD >/dev/null 2>&1 && git checkout -f --detach -q
+git reset --hard "$REF"
+[ "$CLEAN" = "true" ] && git clean -fd
+echo -n "workspace now at: "; git log -1 --oneline
+REMOTE
+)
+    rc=$?
+    set -e
+    handle_lock_rc "$rc" "$out"
+    echo "$out"
+}
+
+cmd_deploy() {
+    local clean=true force=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --no-clean) clean=false; shift ;;
+            --force|-f) force=true; shift ;;
+            *) die "Usage: wt deploy [--no-clean] [--force]" ;;
+        esac
+    done
+    do_deploy "$clean" "$force"
+    info "Build with: wt build   (or redeploy / setup)"
+}
+
+cmd_sut() {  # $1 = build|redeploy|setup ; remaining args may include --force
+    local kind="$1"; shift
+    local force=false
+    [[ "${1:-}" == "--force" || "${1:-}" == "-f" ]] && force=true
+    do_deploy true "$force"
+    # On the FIRST build/redeploy/setup since activation, stop the previous SUT once
+    # (consumes the pending-stop marker set by do_deploy's fresh claim). Subsequent
+    # reruns skip it. Runs inside the durable tmux session, before sf sut <kind>.
+    local stop_prefix=""
+    if remote_consume_pending; then stop_prefix="sf sut stop && "; fi
+    run_durable "$kind" "$stop_prefix"
+}
+
+# Returns 0 (and clears the marker) iff a stop is pending for this worktree's claim.
+remote_consume_pending() {
+    ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "$(owner_token)" <<'REMOTE'
+WS_MAIN="$1"; OWNER="$2"
+LOCK="$(dirname "$WS_MAIN")/.wt.lock"
+PENDING="$(dirname "$WS_MAIN")/.wt.sut-pending"
+exec 9>"$LOCK.flock"
+flock -w 30 9 || exit 1
+if [ "$(cat "$PENDING" 2>/dev/null)" = "$OWNER" ]; then : > "$PENDING"; exit 0; fi
+exit 1
+REMOTE
+}
+
+# Run a long sf sut command in a persistent remote tmux session so it survives SSH
+# drops. Detached-launch + attach; reattach later with `wt attach`. The remote
+# command is passed as an argument (not stdin) so tmux attach keeps the TTY.
+# $2 = optional command prefix (e.g. "sf sut stop && ") to run before sf sut <kind>.
+run_durable() {
+    local kind="$1" prefix="${2:-}" sess="wt"
+    info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME."
+    info "Survives SSH drops — detach with Ctrl-b d, reattach with 'wt attach'."
+    local rcmd
+    rcmd="tmux has-session -t $sess 2>/dev/null && tmux kill-session -t $sess
+tmux new-session -d -s $sess
+tmux send-keys -t $sess 'cd $WS_BUILD && ${prefix}sf sut $kind' Enter
+exec tmux attach -t $sess"
+    exec ssh -t "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
+}
+
+cmd_attach() {
+    require_worktree; require_target
+    exec ssh -t "$WS_NAME" "bash -lc $(printf '%q' "tmux attach -t wt || echo 'no running wt session on $WS_NAME'")"
+}
+
+cmd_ssh() {
+    require_worktree; require_target
+    if [[ $# -eq 0 ]]; then
+        exec ssh -t "$WS_NAME" "bash -lc 'cd $WS_BUILD && exec \$SHELL -l'"
+    fi
+    exec ssh -t "$WS_NAME" "bash -lc 'cd $WS_BUILD && $*'"
+}
+
+cmd_deactivate() {
+    require_worktree; require_target
+    local force=false
+    [[ "${1:-}" == "--force" || "${1:-}" == "-f" ]] && force=true
+    info "Restoring $WS_NAME:$WS_MAIN to 'main' and releasing the lock..."
+    local out rc
+    set +e
+    out=$(ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "$(owner_token)" "$force" <<'REMOTE'
+set -e
+WS_MAIN="$1"; OWNER="$2"; FORCE="$3"
+LOCK="$(dirname "$WS_MAIN")/.wt.lock"
+PENDING="$(dirname "$WS_MAIN")/.wt.sut-pending"
+exec 9>"$LOCK.flock"
+flock -w 30 9 || { echo "LOCKED"; exit 75; }
+owner="$(cat "$LOCK" 2>/dev/null || true)"
+if [ -n "$owner" ] && [ "$owner" != "$OWNER" ] && [ "$FORCE" != "true" ]; then
+    echo "OWNED_BY:$owner"; exit 76
+fi
+echo "stopping SUT (sf sut stop)..."
+(cd "$WS_MAIN" 2>/dev/null && sf sut stop) || true
+cd "$WS_MAIN"
+git checkout -f main
+git clean -fd
+: > "$LOCK"; : > "$PENDING"
+echo -n "workspace now at: "; git log -1 --oneline
+REMOTE
+)
+    rc=$?
+    set -e
+    handle_lock_rc "$rc" "$out"
+    echo "$out"
+}
+
+cmd_status() {
+    require_worktree; load_meta
+    local branch dirty me; branch=$(cur_branch); me=$(owner_token)
+    dirty=$(git -C "$WT_TOP" status --porcelain | wc -l | tr -d ' ')
+    echo "Worktree:  $WT_TOP"
+    echo "Branch:    $branch  (uncommitted entries: $dirty)"
+    if [[ -z "$WS_NAME" ]]; then
+        echo "Workspace: <none bound>  (run: wt use <workspace>)"
+        return 0
+    fi
+    local main="${WS_MAIN:-$WS_MAIN_DEFAULT}"
+    echo "Workspace: $WS_NAME  ($(ws_status "$WS_NAME" || echo '?'))"
+    local rmt
+    rmt=$(ssh -o ConnectTimeout=10 "$WS_NAME" bash -ls -- "$main" <<'REMOTE' 2>/dev/null || true
+WS_MAIN="$1"
+LOCK="$(dirname "$WS_MAIN")/.wt.lock"
+head="$( { git -C "$WS_MAIN" symbolic-ref -q --short HEAD || echo detached; } 2>/dev/null )"
+echo "on=$head $(git -C "$WS_MAIN" log -1 --oneline 2>/dev/null)"
+echo "owner=$(cat "$LOCK" 2>/dev/null || echo '<none>')"
+echo "ps=$(snow ps 2>/dev/null | sed -e 's/\x1b\[[0-9;]*m//g' | grep -oE '(FDB|NGINX|XP|GS) *: \([0-9]+ processes\)' | sed -E 's/ *: \(([0-9]+) processes\)/:\1/' | tr '\n' ' ')"
+REMOTE
+)
+    local owner ps gs
+    owner=$(sed -n 's/^owner=//p' <<<"$rmt")
+    ps=$(sed -n 's/^ps=//p' <<<"$rmt")
+    echo "Workspace clone: $(sed -n 's/^on=//p' <<<"$rmt")"
+    if [[ -z "$owner" || "$owner" == "<none>" ]]; then
+        echo "Active worktree: <none> (workspace idle / on main)"
+    elif [[ "$owner" == "$me" ]]; then
+        echo "Active worktree: $owner  (this worktree)"
+    else
+        echo "Active worktree: $owner  (OTHER — your deploy would be refused without --force)"
+    fi
+    if [[ -n "$ps" ]]; then
+        gs=$(grep -oE 'GS:[0-9]+' <<<"$ps" | cut -d: -f2)
+        echo "Snowflake (snow ps): ${ps% }   → GS $([[ "${gs:-0}" -gt 0 ]] && echo UP || echo DOWN)"
+    else
+        echo "Snowflake (snow ps): <no SUT / snow ps unavailable>"
+    fi
+}
+
+cmd_config() {
+    echo "Config file: $WT_CONFIG  $([[ -f "$WT_CONFIG" ]] && echo '(loaded)' || echo '(absent — using defaults)')"
+    echo "Resolved (env var > config file > default):"
+    echo "  WT_LOCAL_MAIN    local main clone   = $LOCAL_MAIN"
+    echo "  WT_LOCAL_ROOT    local worktrees    = $LOCAL_ROOT"
+    echo "  WT_REMOTE_MAIN   workspace clone    = $WS_MAIN_DEFAULT"
+    echo "  WT_REMOTE_BUILD  workspace build    = $WS_BUILD"
+    if [[ "${1:-}" == "--init" ]]; then
+        [[ -f "$WT_CONFIG" ]] && die "$WT_CONFIG already exists — edit it directly."
+        mkdir -p "$(dirname "$WT_CONFIG")"
+        cat > "$WT_CONFIG" <<EOF
+# wt config — shell snippet, sourced at startup. Set any of these (env vars override).
+WT_LOCAL_MAIN="$LOCAL_MAIN"
+WT_LOCAL_ROOT="$LOCAL_ROOT"
+WT_REMOTE_MAIN="$WS_MAIN_DEFAULT"
+WT_REMOTE_BUILD="$WS_BUILD"
+EOF
+        echo "Wrote $WT_CONFIG (pre-filled with current values)."
+    else
+        echo ""
+        echo "Override per-command:  WT_LOCAL_ROOT=~/wt wt create foo"
+        echo "Persist:               wt config --init   (writes $WT_CONFIG), then edit."
+    fi
+}
+
+cmd_sync() {
+    info "Fetching + fast-forwarding local main ($LOCAL_MAIN)..."
+    git -C "$LOCAL_MAIN" fetch origin
+    git -C "$LOCAL_MAIN" merge --ff-only origin/main
+    info "Local main up to date."
+}
+
+cmd_remove() {
+    require_worktree
+    local force=false
+    [[ "${1:-}" == "--force" || "${1:-}" == "-f" ]] && force=true
+    [[ "$WT_TOP" == "$LOCAL_MAIN" ]] && die "Refusing to remove the main clone ($LOCAL_MAIN)."
+    load_meta
+    local wt="$WT_TOP"
+    cd "$LOCAL_MAIN"
+    local flag=""; [[ "$force" == true ]] && flag="--force"
+    info "Removing local worktree: $wt"
+    git -C "$LOCAL_MAIN" worktree remove $flag "$wt"
+    [[ -n "$WS_NAME" ]] && info "Note: $WS_NAME's clone is unchanged — run 'wt deactivate' there if you want main restored."
+    refresh_workspace
+    return 0
+}
+
+# ── dispatch ──────────────────────────────────────────────────────────────────
+# Global flag: -w/--worktree <name> selects a worktree by name (in $LOCAL_ROOT)
+# instead of the current directory. Strip it from anywhere in the args first.
+WT_OVERRIDE=""
+_args=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -w|--worktree) WT_OVERRIDE="${2:-}"; shift 2 ;;
+        --worktree=*)  WT_OVERRIDE="${1#*=}"; shift ;;
+        *)             _args+=("$1"); shift ;;
+    esac
+done
+set -- ${_args[@]+"${_args[@]}"}
+
+case "${1:-}" in
+    ls|list)          shift; cmd_ls "$@" ;;
+    create)           shift; cmd_create "$@" ;;
+    checkout|co)      shift; cmd_checkout "$@" ;;
+    use)              shift; cmd_use "$@" ;;
+    deploy|sync-code) shift; cmd_deploy "$@" ;;
+    build)            shift; cmd_sut build "$@" ;;
+    redeploy)         shift; cmd_sut redeploy "$@" ;;
+    setup)            shift; cmd_sut setup "$@" ;;
+    ssh)              shift; cmd_ssh "$@" ;;
+    attach)           shift; cmd_attach "$@" ;;
+    deactivate)       shift; cmd_deactivate "$@" ;;
+    status)           shift; cmd_status "$@" ;;
+    sync)             shift; cmd_sync "$@" ;;
+    config)           shift; cmd_config "$@" ;;
+    remove|rm)        shift; cmd_remove "$@" ;;
+    ""|-h|--help|help)
+        awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0" ;;
+    *) die "Unknown command '$1'. Run 'wt help'." ;;
+esac
