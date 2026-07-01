@@ -13,16 +13,25 @@ if ! command -v sf &> /dev/null; then
     exit 0
 fi
 
-# Change to working directory
-{{- if hasKey . "claude_sessions" }}
-TRUNK_DIR="{{ .claude_sessions.cwd }}"
-{{- else }}
-TRUNK_DIR="$HOME/Snowflake/trunk"
-{{- end }}
-if [ ! -d "$TRUNK_DIR" ]; then
-    echo "⚠️  $TRUNK_DIR not found, skipping MCP setup"
+# Resolve the snowflake repo checkout (layout changed: snowflake-base/worktrees → /home/repo/snowflake).
+TRUNK_DIR=""
+for d in \
+    {{- if hasKey . "claude_sessions" -}}
+    "{{ .claude_sessions.cwd }}" \
+    {{- end -}}
+    "/home/repo/snowflake" \
+    "$HOME/Snowflake/trunk" \
+    "$HOME/Projects/snowflake"; do
+    if [ -d "$d" ]; then
+        TRUNK_DIR="$d"
+        break
+    fi
+done
+if [ -z "$TRUNK_DIR" ]; then
+    echo "⚠️  Snowflake repo not found (tried /home/repo/snowflake, ~/Snowflake/trunk, ~/Projects/snowflake), skipping MCP setup"
     exit 0
 fi
+echo "  Using repo: $TRUNK_DIR"
 
 cd "$TRUNK_DIR"
 
