@@ -26,8 +26,9 @@ to install on the workspace.
 **Model — "reset main in place":** code is transferred **peer-to-peer over SSH**
 (only the git delta crosses the wire). `wt deploy` resets the workspace clone at
 `/home/repo/snowflake` (detached) to your synced commit — your code is instantly live for
-`sf sut` — and `wt deactivate` restores it to `main`. Pure local client script; one
-workspace builds one feature at a time (guarded by a lock).
+`sf sut` — and `wt deactivate` restores it to `main`. No bind mounts, symlinks, or sudo on
+either side. One workspace builds one feature at a time, guarded by a **lock file**
+(`/home/repo/.wt.lock`) that records which local worktree owns the checkout.
 
 ### Layout
 
@@ -37,14 +38,15 @@ workspace builds one feature at a time (guarded by a lock).
 | `~/Projects/snowflake-worktree/worktree-<name>/` | Local worktree (`WT_LOCAL_ROOT`) |
 | `<worktree>/.git/.../wt.conf` | Per-worktree state (bound workspace + remote clone path) |
 | `<ws>:/home/repo/snowflake` | Workspace clone (`WT_REMOTE_MAIN`) — push target, reset target; where `sf sut` runs |
-| `<ws>:/home/repo/.wt.lock` | Per-workspace owner lock |
+| `<ws>:/home/repo/.wt.lock` | Owner lock — `user@host:/local/worktree/path`; empty when idle on `main` |
+| `<ws>:/home/repo/.wt.sut-pending` | Internal marker: stop SUT once on first build after a fresh claim |
 | `<ws>` tmux session `wt` | Durable session that runs `sf sut …` |
 
 ### Configuration
 
 Precedence: **ambient env var > config file > built-in default**.
 - Config file: `~/.config/wt/config` (override path with `$WT_CONFIG`), a sourced shell snippet.
-- Variables: `WT_LOCAL_MAIN`, `WT_LOCAL_ROOT`, `WT_REMOTE_MAIN`.
+- Variables: `WT_LOCAL_MAIN`, `WT_LOCAL_ROOT`, `WT_REMOTE_MAIN`, `WT_REMOTE_LOCK`.
 - `wt config` prints resolved values; `wt config --init` scaffolds the file pre-filled.
 - One-off: `WT_LOCAL_ROOT=~/wt wt create foo`.
 

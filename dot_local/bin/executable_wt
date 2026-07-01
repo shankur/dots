@@ -37,14 +37,15 @@ set -euo pipefail
 _env_local_main="${WT_LOCAL_MAIN:-}"
 _env_local_root="${WT_LOCAL_ROOT:-}"
 _env_remote_main="${WT_REMOTE_MAIN:-}"
-_env_remote_build="${WT_REMOTE_BUILD:-}"
+_env_remote_lock="${WT_REMOTE_LOCK:-}"
 WT_CONFIG="${WT_CONFIG:-$HOME/.config/wt/config}"
 [[ -f "$WT_CONFIG" ]] && . "$WT_CONFIG"
 
 LOCAL_MAIN="${_env_local_main:-${WT_LOCAL_MAIN:-$HOME/Projects/snowflake}}"          # original clone (never edited directly)
 LOCAL_ROOT="${_env_local_root:-${WT_LOCAL_ROOT:-$HOME/Projects/snowflake-worktree}}" # where local worktrees live
-WS_MAIN_DEFAULT="${_env_remote_main:-${WT_REMOTE_MAIN:-/home/repo/snowflake}}"  # remote workspace clone
-WS_BUILD="${_env_remote_build:-${WT_REMOTE_BUILD:-$WS_MAIN_DEFAULT}}"           # where sf sut runs (same as clone)
+WS_MAIN_DEFAULT="${_env_remote_main:-${WT_REMOTE_MAIN:-/home/repo/snowflake}}"       # remote workspace clone (reset target + sf sut cwd)
+WS_LOCK="${_env_remote_lock:-${WT_REMOTE_LOCK:-/home/repo/.wt.lock}}"              # per-workspace owner lock (plain file + flock)
+WS_PENDING="$(dirname "$WS_LOCK")/.wt.sut-pending"                                   # one-shot SUT stop marker on fresh claim
 
 die()  { echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
@@ -126,12 +127,11 @@ cur_branch() {
         || echo "detached-$(git -C "$WT_TOP" rev-parse --short HEAD)"
 }
 
-# Stable identity of this local worktree — recorded as the workspace's owner so a
-# second agent/worktree can't silently reset main/code out from under this one.
+# Stable identity of this local worktree — stored in the workspace lock so a
+# second worktree cannot silently reset /home/repo/snowflake out from under this one.
 owner_token() { echo "${USER}@$(hostname -s):$WT_TOP"; }
 
-# Path of the owner lock on a workspace (parent of the remote clone).
-ws_lockfile() { echo "$(dirname "$WS_MAIN_DEFAULT")/.wt.lock"; }
+ws_lockfile() { echo "$WS_LOCK"; }
 
 # How many local worktrees are bound to workspace $1 (reads each worktree's
 # wt.conf WS_NAME). Excludes the current worktree ($META). bash-3.2 safe.
@@ -238,7 +238,6 @@ cmd_create() {
         git -C "$wt" sparse-checkout set "${sparse[@]}"
     fi
     git -C "$wt" checkout
-    [[ -f "$LOCAL_MAIN/.mcp.json" ]] && ln -sf "$LOCAL_MAIN/.mcp.json" "$wt/.mcp.json"
     echo ""
     echo "Worktree '$name' created at $wt"
     echo "  cd $wt && wt use <workspace> && wt build"
@@ -277,7 +276,6 @@ cmd_checkout() {
         git -C "$wt" sparse-checkout set "${sparse[@]}"
     fi
     git -C "$wt" checkout
-    [[ -f "$LOCAL_MAIN/.mcp.json" ]] && ln -sf "$LOCAL_MAIN/.mcp.json" "$wt/.mcp.json"
     echo ""
     echo "Worktree '$name' (branch '$branch') checked out at $wt"
     echo "  cd $wt && wt use <workspace> && wt build"
@@ -296,7 +294,7 @@ cmd_use() {
     info "Locating the workspace clone on '$name'..."
     local main
     main=$(ssh "$name" bash -ls <<REMOTE || true
-for p in "$WS_MAIN_DEFAULT" /home/repo/snowflake /home/repo/snowflake-worktree/main/code; do
+for p in "$WS_MAIN_DEFAULT" /home/repo/snowflake; do
     if git -C "\$p" rev-parse --git-dir >/dev/null 2>&1; then echo "\$p"; exit 0; fi
 done
 REMOTE
@@ -336,16 +334,14 @@ do_deploy() {
     info "Pushing delta to $WS_NAME:$WS_MAIN ..."
     GIT_SSH_COMMAND=ssh git -C "$WT_TOP" push --no-verify "ssh://$WS_NAME$WS_MAIN" "+$T:refs/wt/$branch"
 
-    # Under a per-workspace lock: claim ownership, then detached-reset main/code to
-    # your commit so it is live at the build path. Refuses if another worktree owns it.
+    # Under a per-workspace lock: claim ownership, then detached-reset the clone to
+    # your commit. Refuses if another worktree owns it.
     info "Applying on $WS_NAME (detached reset of $WS_MAIN) ..."
     local out rc
     set +e
-    out=$(ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "refs/wt/$branch" "$(owner_token)" "$force" "$clean" <<'REMOTE'
+    out=$(ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "$WS_LOCK" "$WS_PENDING" "refs/wt/$branch" "$(owner_token)" "$force" "$clean" <<'REMOTE'
 set -e
-WS_MAIN="$1"; REF="$2"; OWNER="$3"; FORCE="$4"; CLEAN="$5"
-LOCK="$(dirname "$WS_MAIN")/.wt.lock"
-PENDING="$(dirname "$WS_MAIN")/.wt.sut-pending"
+WS_MAIN="$1"; LOCK="$2"; PENDING="$3"; REF="$4"; OWNER="$5"; FORCE="$6"; CLEAN="$7"
 exec 9>"$LOCK.flock"
 flock -w 30 9 || { echo "LOCKED"; exit 75; }
 owner="$(cat "$LOCK" 2>/dev/null || true)"
@@ -399,10 +395,8 @@ cmd_sut() {  # $1 = build|redeploy|setup ; remaining args may include --force
 
 # Returns 0 (and clears the marker) iff a stop is pending for this worktree's claim.
 remote_consume_pending() {
-    ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "$(owner_token)" <<'REMOTE'
-WS_MAIN="$1"; OWNER="$2"
-LOCK="$(dirname "$WS_MAIN")/.wt.lock"
-PENDING="$(dirname "$WS_MAIN")/.wt.sut-pending"
+    ssh "$WS_NAME" bash -ls -- "$WS_LOCK" "$WS_PENDING" "$(owner_token)" <<'REMOTE'
+LOCK="$1"; PENDING="$2"; OWNER="$3"
 exec 9>"$LOCK.flock"
 flock -w 30 9 || exit 1
 if [ "$(cat "$PENDING" 2>/dev/null)" = "$OWNER" ]; then : > "$PENDING"; exit 0; fi
@@ -416,12 +410,13 @@ REMOTE
 # $2 = optional command prefix (e.g. "sf sut stop && ") to run before sf sut <kind>.
 run_durable() {
     local kind="$1" prefix="${2:-}" sess="wt"
+    local sut_cmd="cd $(printf '%q' "$WS_MAIN") && ${prefix}sf sut $kind"
     info "Launching '${prefix}sf sut $kind' in remote tmux session '$sess' on $WS_NAME."
     info "Survives SSH drops — detach with Ctrl-b d, reattach with 'wt attach'."
     local rcmd
     rcmd="tmux has-session -t $sess 2>/dev/null && tmux kill-session -t $sess
 tmux new-session -d -s $sess
-tmux send-keys -t $sess 'cd $WS_BUILD && ${prefix}sf sut $kind' Enter
+tmux send-keys -t $sess $(printf '%q' "$sut_cmd") Enter
 exec tmux attach -t $sess"
     exec ssh -t "$WS_NAME" "bash -lc $(printf '%q' "$rcmd")"
 }
@@ -434,9 +429,9 @@ cmd_attach() {
 cmd_ssh() {
     require_worktree; require_target
     if [[ $# -eq 0 ]]; then
-        exec ssh -t "$WS_NAME" "bash -lc 'cd $WS_BUILD && exec \$SHELL -l'"
+        exec ssh -t "$WS_NAME" "bash -lc 'cd $WS_MAIN && exec \$SHELL -l'"
     fi
-    exec ssh -t "$WS_NAME" "bash -lc 'cd $WS_BUILD && $*'"
+    exec ssh -t "$WS_NAME" "bash -lc 'cd $WS_MAIN && $*'"
 }
 
 cmd_deactivate() {
@@ -446,11 +441,9 @@ cmd_deactivate() {
     info "Restoring $WS_NAME:$WS_MAIN to 'main' and releasing the lock..."
     local out rc
     set +e
-    out=$(ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "$(owner_token)" "$force" <<'REMOTE'
+    out=$(ssh "$WS_NAME" bash -ls -- "$WS_MAIN" "$WS_LOCK" "$WS_PENDING" "$(owner_token)" "$force" <<'REMOTE'
 set -e
-WS_MAIN="$1"; OWNER="$2"; FORCE="$3"
-LOCK="$(dirname "$WS_MAIN")/.wt.lock"
-PENDING="$(dirname "$WS_MAIN")/.wt.sut-pending"
+WS_MAIN="$1"; LOCK="$2"; PENDING="$3"; OWNER="$4"; FORCE="$5"
 exec 9>"$LOCK.flock"
 flock -w 30 9 || { echo "LOCKED"; exit 75; }
 owner="$(cat "$LOCK" 2>/dev/null || true)"
@@ -485,9 +478,8 @@ cmd_status() {
     local main="${WS_MAIN:-$WS_MAIN_DEFAULT}"
     echo "Workspace: $WS_NAME  ($(ws_status "$WS_NAME" || echo '?'))"
     local rmt
-    rmt=$(ssh -o ConnectTimeout=10 "$WS_NAME" bash -ls -- "$main" <<'REMOTE' 2>/dev/null || true
-WS_MAIN="$1"
-LOCK="$(dirname "$WS_MAIN")/.wt.lock"
+    rmt=$(ssh -o ConnectTimeout=10 "$WS_NAME" bash -ls -- "$main" "$WS_LOCK" <<'REMOTE' 2>/dev/null || true
+WS_MAIN="$1"; LOCK="$2"
 head="$( { git -C "$WS_MAIN" symbolic-ref -q --short HEAD || echo detached; } 2>/dev/null )"
 echo "on=$head $(git -C "$WS_MAIN" log -1 --oneline 2>/dev/null)"
 echo "owner=$(cat "$LOCK" 2>/dev/null || echo '<none>')"
@@ -519,7 +511,7 @@ cmd_config() {
     echo "  WT_LOCAL_MAIN    local main clone   = $LOCAL_MAIN"
     echo "  WT_LOCAL_ROOT    local worktrees    = $LOCAL_ROOT"
     echo "  WT_REMOTE_MAIN   workspace clone    = $WS_MAIN_DEFAULT"
-    echo "  WT_REMOTE_BUILD  workspace build    = $WS_BUILD"
+    echo "  WT_REMOTE_LOCK   workspace lock     = $WS_LOCK"
     if [[ "${1:-}" == "--init" ]]; then
         [[ -f "$WT_CONFIG" ]] && die "$WT_CONFIG already exists — edit it directly."
         mkdir -p "$(dirname "$WT_CONFIG")"
@@ -528,7 +520,7 @@ cmd_config() {
 WT_LOCAL_MAIN="$LOCAL_MAIN"
 WT_LOCAL_ROOT="$LOCAL_ROOT"
 WT_REMOTE_MAIN="$WS_MAIN_DEFAULT"
-WT_REMOTE_BUILD="$WS_BUILD"
+WT_REMOTE_LOCK="$WS_LOCK"
 EOF
         echo "Wrote $WT_CONFIG (pre-filled with current values)."
     else
