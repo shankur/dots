@@ -1,0 +1,34 @@
+.local/bin/sf-ai-codex
+.local/bin/nvim-claude
+.config/nvim/claude-control
+.config/nvim/lua/plugins/claude-remote-control.lua
+.config/nvim/lua/plugins/claude-cli.lua
+.config/nvim/lua/plugins/multi-claude.lua
+.config/nvim/lua/plugins/zpr.lua
+.claude/skills/zpr-review
+.jarvis
+.cursor/rules/personal-orientation.mdc
+.cursor/blocklist
+.cursor/mcp.json
+.cursor/skills/dynamic-tables-apply-recommendations-evals
+.cursor/skills-cursor/automate
+.cursor/skills-cursor/babysit
+.cursor/skills-cursor/canvas
+.cursor/skills-cursor/create-hook
+.cursor/skills-cursor/create-rule
+.cursor/skills-cursor/create-skill
+.cursor/skills-cursor/create-subagent
+.cursor/skills-cursor/loop
+.cursor/skills-cursor/migrate-to-skills
+.cursor/skills-cursor/onboard
+.cursor/skills-cursor/review
+.cursor/skills-cursor/review-bugbot
+.cursor/skills-cursor/review-security
+.cursor/skills-cursor/sdk
+.cursor/skills-cursor/shell
+.cursor/skills-cursor/split-to-prs
+.cursor/skills-cursor/statusline
+.cursor/skills-cursor/update-cli-config
+.cursor/skills-cursor/update-cursor-settings
+Library/Application Support/Cursor/User/settings.json
+Library/Application Support/Cursor/User/keybindings.json

@@ -1,8 +1,0 @@
-#!/bin/sh
-# The OpenAI ChatGPT/Codex VS Code extension launches its backend as
-#   <chatgpt.cliExecutable> app-server --analytics-default-enabled
-# `sf ai codex` sets up Snowflake auth/config and forwards everything after the
-# `--` to the real codex binary — so this runs codex's app-server WITH valid
-# Snowflake auth. (Without `--`, sf parses the extension's flags itself and dies
-# on "unknown flag"; that was the earlier breakage.)
-exec /usr/local/bin/sf ai codex -- "$@"

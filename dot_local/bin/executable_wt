@@ -9,7 +9,7 @@
 # workspaces (starts a stopped one); never creates/destroys them. Pure local script.
 #
 # Commands (run from inside a local git worktree unless noted):
-#   wt ls                                   List workspaces; mark this worktree's target. (anywhere)
+#   wt ls [--all]                           List workspaces (mark this worktree's target); --all lists every worktree + its bound workspace + live lock claim. (anywhere)
 #   wt create <name> [--base <b>] [--sparse <path>...]   Make a local (sparse) worktree on a NEW branch.
 #   wt checkout <remote-branch> [--name <dir>] [--sparse <path>...]   Worktree from an EXISTING remote branch.
 #   wt use [<workspace>|--auto]             Bind this worktree to a workspace (no name = pick a free one; starts it if stopped).
@@ -193,6 +193,15 @@ $out" ;;
 
 # ── commands ────────────────────────────────────────────────────────────────────
 cmd_ls() {
+    local all=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --all|-a) all=true; shift ;;
+            *) die "Usage: wt ls [--all]" ;;
+        esac
+    done
+    [[ "$all" == true ]] && { cmd_ls_all; return $?; }
+
     local cur=""
     if WT_TOP=$(git rev-parse --show-toplevel 2>/dev/null); then
         META=$(git -C "$WT_TOP" rev-parse --git-path wt.conf)
@@ -212,6 +221,47 @@ for r in rows:
     [[ -n "$cur" ]] && echo "(* = bound to this worktree)"
     return 0
 }
+
+# List every local worktree in the main clone, its branch, its bound workspace
+# (from each worktree's wt.conf), and whether it currently HOLDS that workspace's
+# lock (live read of $WS_LOCK, one SSH per unique workspace, cached). Runs anywhere.
+cmd_ls_all() {
+    [[ -d "$LOCAL_MAIN/.git" ]] || die "Main clone not found at $LOCAL_MAIN"
+    local here host cache wt mark branch conf ws claim owner cf owner_path
+    here=$(git rev-parse --show-toplevel 2>/dev/null || true)
+    host=$(hostname -s)
+    cache=$(mktemp -d)
+
+    printf '%-2s %-40s %-30s %-8s %s\n' "" "WORKTREE" "BRANCH" "WORKSPACE" "CLAIM"
+    # Loop in the current shell (process substitution, not a pipe) so set -e/-u
+    # behave and vars persist. ssh -n keeps ssh from consuming the loop's stdin.
+    while IFS= read -r wt; do
+        mark="  "; [[ -n "$here" && "$wt" == "$here" ]] && mark=" *"
+        if [[ ! -d "$wt" ]]; then
+            printf '%-2s %-40s %-30s %-8s %s\n' "$mark" "$(basename "$wt")" "(prunable — dir gone)" "-" "-"
+            continue
+        fi
+        branch=$(git -C "$wt" symbolic-ref --quiet --short HEAD 2>/dev/null || echo "detached")
+        conf=$(git -C "$wt" rev-parse --git-path wt.conf 2>/dev/null)
+        case "$conf" in /*) ;; *) conf="$wt/$conf" ;; esac
+        ws=""; [[ -f "$conf" ]] && ws=$( . "$conf" 2>/dev/null; echo "${WS_NAME:-}" )
+        claim="-"
+        if [[ -n "$ws" ]]; then
+            cf="$cache/$ws"
+            if [[ -f "$cf" ]]; then owner=$(cat "$cf")
+            else owner=$(ssh -n -o ConnectTimeout=8 "$ws" "cat '$WS_LOCK' 2>/dev/null" 2>/dev/null || true); printf '%s' "$owner" > "$cf"; fi
+            if   [[ -z "$owner" ]];                       then claim="idle"
+            elif [[ "$owner" == "${USER}@${host}:$wt" ]]; then claim="OWNS"
+            else owner_path="${owner##*:}"; claim="held: $(basename "$owner_path")"; fi
+        fi
+        printf '%-2s %-40s %-30s %-8s %s\n' "$mark" "$(basename "$wt")" "$branch" "${ws:-<none>}" "$claim"
+    done < <(git -C "$LOCAL_MAIN" worktree list --porcelain | awk '/^worktree /{print $2}')
+
+    rm -rf "$cache"
+    [[ -n "$here" ]] && echo "(* = current worktree · CLAIM = live owner of the bound workspace's lock)"
+    return 0
+}
+
 
 cmd_create() {
     local name="" base="main"; local -a sparse=()

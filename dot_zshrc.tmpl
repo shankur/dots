@@ -259,7 +259,6 @@ fi
 {{- if eq .profile "work" }}
 
 eval "$(sf aliases)"
-export SNOWDASH_CACHE_FILE="$HOME/claude-kb/cache/snowtrail.json"
 alias claude='claude --dangerously-skip-permissions'
 
 # Refresh the forwarded GitHub ssh-agent on a Snowflake cloud workspace.
@@ -299,3 +298,14 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 {{ end }}
+
+# Added by sf setup
+if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+  . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+fi
+
+# Added by sf setup
+export PATH="$HOME/.local/bin:$PATH"
+
+# Cortex CLI completion (disable via /settings in cortex)
+[[ -s ~/.zsh/completions/cortex.zsh ]] && source ~/.zsh/completions/cortex.zsh

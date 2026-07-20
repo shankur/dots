@@ -1,26 +1,13 @@
+# macOS Finder metadata — never chezmoi-managed
+.DS_Store
+**/.DS_Store
+
 {{- if ne .chezmoi.os "darwin" }}
-# jarvis runs only on the local mac, never on cloud workspaces (Linux).
-# The encrypted config needs the age key (key.txt), which only exists on the mac;
-# ignoring the whole dir here keeps chezmoi from trying to decrypt it.
-.jarvis
 # wt is a local Mac CLI for driving cloud workspaces; never deploy to Linux hosts.
 .local/bin/wt
-# VSCode/Cursor GUI settings are macOS-only here; Linux cloud workspaces use Remote/server settings.
+# VSCode GUI settings are macOS-only here; Linux cloud workspaces use Remote/server settings.
 Library/Application Support/Code/**
-Library/Application Support/Cursor/**
 {{- end }}
-
-# cursor: never manage runtime state (MCP caches, transcripts, extensions, app sync metadata)
-.cursor/projects/**
-.cursor/**/agent-transcripts/**
-.cursor/extensions/**
-.cursor/skills-cursor/.sync-manifest.json
-.cursor/unified_repo_list.json
-
-# jarvis: never manage runtime state (DB holds transcripts/diffs, worktrees are large, ssh sockets are live)
-.jarvis/jarvis.sqlite*
-.jarvis/worktrees
-.jarvis/ssh
 
 # codex: manage only AGENTS.md — never runtime state, machine/Koi-managed config, or secrets
 .codex/*.sqlite*

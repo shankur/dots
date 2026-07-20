@@ -1,5 +1,6 @@
+{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
-# Clone ai-history repo
+# Clone ai-history repo (macOS only — cloud workspaces are ephemeral, no local history needed there)
 # repo: {{ .ai_history_repo }}
 set -e
 
@@ -37,3 +38,4 @@ if [ -f "$DEST/setup.sh" ]; then
         echo "WARNING: ai-history setup.sh failed (exit $rc) — skipping hook setup, not blocking chezmoi" >&2
     fi
 fi
+{{ end -}}

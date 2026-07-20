@@ -1,0 +1,36 @@
+#!/bin/bash
+# Symlink claude-kb skills into ~/.claude/skills/, then mirror everything under
+# ~/.claude/skills/ (claude-kb symlinks + chezmoi-native dirs) into ~/.agents/skills/
+# so Codex CLI's native $HOME/.agents/skills scan sees the same skill set Claude does.
+# hash: {{ joinPath .chezmoi.homeDir "claude-kb" "skills" | glob | join "," }}
+set -e
+
+SKILLS_DIR="$HOME/.claude/skills"
+KB_SKILLS="$HOME/claude-kb/skills"
+AGENT_SKILLS="$HOME/.agents/skills"
+
+# Symlink each skill from claude-kb that isn't already present as a real dir
+if [ -d "$KB_SKILLS" ]; then
+    for skill in "$KB_SKILLS"/*/; do
+        name=$(basename "$skill")
+        target="$SKILLS_DIR/$name"
+
+        # Skip if a real (non-symlink) directory exists (chezmoi-managed)
+        if [ -d "$target" ] && [ ! -L "$target" ]; then
+            continue
+        fi
+
+        # Create or update symlink
+        ln -sfn "$skill" "$target"
+    done
+fi
+
+# Mirror every skill Claude can see (claude-kb symlinks + chezmoi-native real
+# dirs) into ~/.agents/skills/, so Codex picks up the exact same set.
+if [ -d "$SKILLS_DIR" ]; then
+    mkdir -p "$AGENT_SKILLS"
+    for skill in "$SKILLS_DIR"/*/; do
+        name=$(basename "$skill")
+        ln -sfn "$skill" "$AGENT_SKILLS/$name"
+    done
+fi

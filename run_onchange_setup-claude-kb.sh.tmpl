@@ -1,5 +1,6 @@
+{{ if eq .chezmoi.os "darwin" -}}
 {{ $repo := "" }}{{ if hasKey . "claude_kb_repo" }}{{ $repo = .claude_kb_repo }}{{ end }}#!/bin/bash
-# Clone claude-kb plugin repo
+# Clone claude-kb plugin repo (macOS only — cloud workspaces are ephemeral, no local KB checkout needed there)
 # repo: {{ $repo }}
 set -e
 
@@ -32,3 +33,4 @@ if [ -f "$DEST/setup.sh" ]; then
     (cd "$DEST" && bash setup.sh)
     echo "claude-kb setup complete"
 fi
+{{ end -}}

@@ -55,7 +55,10 @@
       "Bash(/usr/bin/ssh alice:*)",
       "Bash(/usr/bin/scp:*)",
       "Bash(chezmoi unmanaged:*)",
-      "Bash(chezmoi status:*)"
+      "Bash(chezmoi status:*)",
+      "mcp__snowhouse__snowhouse_execute_query",
+      "mcp__jira__jira_search_issues",
+      "mcp__jira__jira_get_issue"
     ]
   },
   "enabledMcpjsonServers": [

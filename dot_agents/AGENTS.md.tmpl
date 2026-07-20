@@ -1,16 +1,19 @@
 > **NEVER HAND-WAVE: MAKE SURE THAT YOUR ASSESSMENT IS CORRECT BEFORE PRESENTING OR ACTING UPON THEM**
 
-> **EVERY SESSION MUST FULLY RESPECT BOTH THIS FILE (`~/.codex/AGENTS.md`) AND THE PROJECT-LEVEL `CLAUDE.md`. Read both at session start. Rules here are non-negotiable — do not rationalize deviations.**
+> **EVERY SESSION MUST FULLY RESPECT BOTH THIS FILE AND ANY PROJECT-LEVEL `CLAUDE.md`/`AGENTS.md`. Read both at session start. Rules here are non-negotiable — do not rationalize deviations.**
+
+> **EVERY TIME YOU MAKE A MISTAKE AND THERE IS SOMETHING TO LEARN FROM IT, UPDATE THIS FILE (`~/.agents/AGENTS.md`, edited via `~/.local/share/chezmoi/dot_agents/AGENTS.md.tmpl`) SO THE SAME MISTAKE ISN'T REPEATED NEXT SESSION.**
 
 ---
 
-You have a personal knowledge base at ~/claude-kb/. When answering questions about internal tools, systems, or workflows, read the relevant knowledge base files from that directory.
+You have a personal knowledge base at ~/claude-kb/. When answering questions about internal tools, systems, or workflows, read the relevant knowledge base files from that directory. Before reasoning about an internal system's data model or behavior, LIST ~/claude-kb/knowledge-base/ and read any file whose name matches the system — do not reconstruct semantics from inference when a KB file exists.
 
 - Snowhouse (Snowflake internal data warehouse): ~/claude-kb/knowledge-base/SNOWHOUSE_KB.md
+- Snowtrail (internal A/B query-replay system; config/workflow/job/query/execution model, snowtrail.snowtrail_3 schema): ~/claude-kb/knowledge-base/SNOWTRAIL_KB.md
 
 When creating new commands or skills:
 - General/portable skills: ~/.local/share/chezmoi/dot_claude/skills/<name>/SKILL.md (managed by chezmoi, deployed everywhere)
-- Project-specific skills: ~/claude-kb/skills/<name>/ (auto-symlinked into ~/.claude/skills/ when claude-kb exists)
+- Project-specific skills: ~/claude-kb/skills/<name>/ (auto-symlinked into ~/.claude/skills/ and ~/.agents/skills/ when claude-kb exists)
 - Commands: ~/claude-kb/commands/<name>.md
 
 ---
@@ -53,7 +56,7 @@ Precedence: **ambient env var > config file > built-in default**.
 ### Command reference
 
 ```bash
-wt ls                         # list sf workspaces; marks this worktree's bound target
+wt ls [--all]                 # list sf workspaces (marks this worktree's target); --all lists every worktree + its bound workspace + live lock owner
 wt create <name> [--base <b>] [--sparse <path>...]        # NEW branch as a (sparse) worktree
 wt checkout <remote-branch> [--name <dir>] [--sparse ...] # worktree from an EXISTING origin branch (alias: co)
 wt use [<workspace>|--auto]   # bind this worktree to a workspace (no name / --auto = pick a free RUNNING one); starts it if stopped
@@ -121,6 +124,11 @@ Code can only be built, deployed, and tested on the workspace. After `wt deploy`
 - A workspace is **claimed** by the first worktree that deploys to it (owner stored in
   `.wt.lock`). Another worktree's deploy is refused with the owner shown — release with
   `wt deactivate` or override with `--force`. One SUT per workspace.
+- **Always `wt deactivate` when the work is done** — i.e. the commit is made and there is no
+  follow-up ask. This releases the workspace lock and restores its clone to `main` so other
+  worktrees (and other people) can claim it. Leaving a workspace claimed after finishing blocks
+  the shared pool. Use `wt ls --all` to see every worktree, its bound workspace, and which
+  worktree currently holds each lock.
 - `build`/`redeploy`/`setup` run inside a remote **tmux** session named `wt` (detached by default — use `--attach` or `wt attach` to follow live); they
   survive SSH drops.
 - `wt` runs `sf sut stop` once per activation — on the **first** `build`/`redeploy`/`setup`

@@ -1,9 +1,11 @@
 #!/bin/bash
-# Cross-platform development tools installation script
+# Cross-platform development tools + language runtimes installation script
 
 set -e
 
 echo "🚀 Installing development tools for {{ .chezmoi.os }}..."
+
+command_exists() { command -v "$1" &> /dev/null; }
 
 {{- if eq .chezmoi.os "darwin" }}
 
@@ -11,10 +13,13 @@ echo "🚀 Installing development tools for {{ .chezmoi.os }}..."
 echo "📦 Installing via Homebrew..."
 
 # Ensure Homebrew is installed
-if ! command -v brew &> /dev/null; then
+if ! command_exists brew; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
+
+# Language runtimes and core dev tools
+brew install git neovim go rust node python3 fzf tree
 
 # Install development tools
 brew install gcc fd eza ripgrep zoxide
@@ -24,6 +29,43 @@ brew install git-extras starship zellij
 echo "✅ macOS tools installed via Homebrew"
 
 mkdir -p ~/.local/bin
+
+# fzf-tab and eza completions (macOS)
+if [ ! -d "$HOME/.config/fzf-tab" ]; then
+    git clone https://github.com/Aloxaf/fzf-tab ~/.config/fzf-tab
+fi
+mkdir -p ~/.zsh/completions
+curl -sSfL -o ~/.zsh/completions/_eza \
+    "https://raw.githubusercontent.com/eza-community/eza/main/completions/zsh/_eza"
+
+# Install Sheldon (zsh plugin manager) via cargo
+command_exists sheldon || cargo install sheldon
+
+{{- else if eq .chezmoi.osRelease.id "nixos" }}
+
+# NixOS
+echo "❄️  Using Nix package manager"
+
+PACKAGES=""
+for pkg in git neovim go nodejs python3 gcc curl wget fzf tree fd eza ripgrep zoxide starship delta bat zellij clang-tools rustfmt; do
+    command_exists "$pkg" &>/dev/null || PACKAGES="$PACKAGES nixpkgs.$pkg"
+done
+[[ -f ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] || PACKAGES="$PACKAGES nixpkgs.zsh-autosuggestions"
+[[ -f ~/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] || PACKAGES="$PACKAGES nixpkgs.zsh-syntax-highlighting"
+
+if [ -n "$PACKAGES" ]; then
+    echo "📦 Installing missing packages:$PACKAGES"
+    nix-env -iA $PACKAGES
+fi
+
+if ! command_exists cargo; then
+    echo "🦀 Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+fi
+command_exists sheldon || cargo install sheldon
+
+echo "✅ NixOS tools installed"
 
 {{- else if or (eq .chezmoi.osRelease.id "amzn") (eq .chezmoi.osRelease.id "rhel") (eq .chezmoi.osRelease.id "centos") }}
 
@@ -45,7 +87,7 @@ sudo $PKG_MGR install -y epel-release
 
 # Install development tools
 sudo $PKG_MGR groupinstall -y "Development Tools"
-sudo $PKG_MGR install -y gcc gcc-c++
+sudo $PKG_MGR install -y gcc gcc-c++ git neovim golang nodejs npm python3 python3-pip curl wget fzf tree zsh bat
 
 # Install modern tools (may need manual installation on older systems)
 echo "Installing fd-find..."
@@ -82,9 +124,15 @@ curl -sSfL https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bi
 curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$(uname -m)-unknown-linux-musl.tar.gz" | tar xz -C ~/.local/bin
 
 # Install zsh plugins
-sudo $PKG_MGR install -y zsh
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions 2>/dev/null || true
 git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting 2>/dev/null || true
+
+# Install Rust if not present (for eza and other cargo tools)
+if ! command_exists cargo; then
+    echo "🦀 Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+fi
 
 echo "✅ Amazon Linux/RHEL tools installed"
 
@@ -99,10 +147,12 @@ echo "📦 Installing via apt for Ubuntu/Debian..."
 sudo apt update
 
 # Install development tools
-sudo apt install -y build-essential gcc g++
+sudo apt install -y build-essential gcc g++ git neovim golang-go nodejs npm python3 python3-pip curl wget
 
 # Install modern tools
-sudo apt install -y fd-find ripgrep zsh
+sudo apt install -y fd-find ripgrep zsh bat fzf tree
+# Build dependencies for cargo-installed tools (git-delta, eza, etc.)
+sudo apt install -y zlib1g-dev pkg-config libssl-dev
 
 # Install eza
 echo "Installing eza..."
@@ -123,12 +173,41 @@ curl -sSfL "https://github.com/zellij-org/zellij/releases/latest/download/zellij
 # Install zsh plugins
 sudo apt install -y zsh-autosuggestions zsh-syntax-highlighting
 
+# Install fzf shell integration scripts (not bundled in Ubuntu's fzf package)
+FZF_SHELL_DIR="$HOME/.config/fzf"
+mkdir -p "$FZF_SHELL_DIR"
+if [ ! -f "$FZF_SHELL_DIR/completion.zsh" ]; then
+    curl -sSfL -o "$FZF_SHELL_DIR/completion.zsh" \
+        "https://raw.githubusercontent.com/junegunn/fzf/master/shell/completion.zsh"
+    curl -sSfL -o "$FZF_SHELL_DIR/key-bindings.zsh" \
+        "https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh"
+fi
+
+# Install fzf-tab (fzf-powered zsh completion menu)
+if [ ! -d "$HOME/.config/fzf-tab" ]; then
+    git clone https://github.com/Aloxaf/fzf-tab ~/.config/fzf-tab
+fi
+
+# Install zsh completions for eza and ripgrep
+mkdir -p ~/.zsh/completions
+curl -sSfL -o ~/.zsh/completions/_eza \
+    "https://raw.githubusercontent.com/eza-community/eza/main/completions/zsh/_eza"
+command -v rg &>/dev/null && rg --generate complete-zsh > ~/.zsh/completions/_rg
+
+# Install Rust if not present (for eza and other cargo tools)
+if ! command_exists cargo; then
+    echo "🦀 Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+fi
+
 echo "✅ Ubuntu/Debian tools installed"
 
 {{- else }}
 
 echo "🤔 Unsupported OS: {{ .chezmoi.os }}"
 echo "Please install these tools manually:"
+echo "- git, neovim, go, rust, node, python3 (languages/runtimes)"
 echo "- gcc/g++ (C/C++ compiler)"
 echo "- fd-find (better find)"
 echo "- eza (better ls)"
@@ -138,6 +217,20 @@ echo "- starship (prompt)"
 echo "- zsh-autosuggestions"
 echo "- zsh-syntax-highlighting"
 
+{{- end }}
+
+{{- if and (ne .chezmoi.os "darwin") (ne .chezmoi.osRelease.id "nixos") }}
+
+# Fill in any tools not covered by the distro's package manager via cargo
+# (skipped on NixOS, where nix-env already covers everything above).
+if command_exists cargo; then
+    export PATH="$HOME/.cargo/bin:$PATH"
+    command_exists starship || cargo install starship
+    command_exists zoxide || cargo install zoxide
+    command_exists delta || cargo install git-delta
+    command_exists eza || cargo install eza
+    command_exists sheldon || cargo install sheldon
+fi
 {{- end }}
 
 echo "🎉 Development tools installation complete!"
