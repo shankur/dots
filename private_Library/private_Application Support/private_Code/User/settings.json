@@ -6,17 +6,9 @@
   "[sql]": {
     "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
   },
-  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms100m -Xlog:disable",
-  "java.server.launchMode": "LightWeight",
-  "java.import.maven.enabled": false,
-  "java.import.gradle.enabled": false,
-  "bazel.projectview.open": false,
-  "java.autobuild.enabled": false,
-  "bazel.enableCodeLens": true,
   "cmake.configureOnOpen": true,
   "cmake.exportCompileCommandsFile": false,
   "cmake.loadCompileCommands": false,
-  "cmake.showOptionsMovedNotification": false,
   "editor.fontFamily": "Lekton Nerd Font, Jetbrains Mono Nerd Font, Monofur NF, Monaco, 'Courier New', monospace",
   "editor.minimap.enabled": false,
   "extensions.autoCheckUpdates": false,
@@ -32,7 +24,6 @@
   ],
   "remote.SSH.enableAgentForwarding": true,
   "security.workspace.trust.untrustedFiles": "open",
-  "snowflake.connectionsConfigFile": "/Users/ansharma/.snowflake/connections.toml",
   "update.mode": "none",
   "update.showReleaseNotes": false,
   "window.zoomLevel": 2,
@@ -41,7 +32,6 @@
   "chat.agent.sandbox.advanced.runtime": {
     "enableWeakerNestedSandbox": false
   },
-  "claudeCode.preferredLocation": "panel",
   "workbench.preferredDarkColorTheme": "Catppuccin Latte",
   "workbench.preferredLightColorTheme": "Catppuccin Mocha",
   "workbench.editor.autoLockGroups": {
@@ -52,18 +42,11 @@
   "debug.console.fontSize": 10,
   "terminal.integrated.fontSize": 10,
   "markdown.preview.fontSize": 10,
-  "mssql.resultsFontSize": 10,
   "editor.fontVariations": false,
-  "jdk.telemetry.enabled": false,
-  "chatgpt.commentCodeLensEnabled": false,
-  "claudeCode.environmentVariables": [],
   "chat.viewSessions.orientation": "stacked",
-  "claude.authCommand": "sf ai claude -z --",
-  "codex.authCommand": "sf ai codex --",
-  "claude.binaryPath": "sf ai claude --",
-  "codex.binaryPath": "sf ai codex --",
-  "agentsPanel.projects": [
-    "~/Projects/vscode-agents-panel",
-    "~/Projects/snowflake"
+  "editor.fontSize": 10,
+  "multiAgent.projects": [
+    "~/Projects/vscode-multi-agent",
+    "~/.local/share/chezmoi"
   ]
 }

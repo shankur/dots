@@ -218,9 +218,9 @@ workspaces and a macOS Dock **Projects** stack, so you can launch any project
 with a click.
 
 **The pieces (all chezmoi-managed):**
-- `dot_config/projects-workspace/repos` — the list of projects to track
+- `dot_config/projects-workspace/repos` — the list of projects to track (per-profile — see below)
 - `dot_local/bin/executable_gen-projects-workspace` — the generator (Python)
-- `run_onchange_after_setup-projects-dock.sh.tmpl` — adds the Dock stack (macOS, idempotent)
+- `dot_local/bin/executable_setup-projects-dock.sh` — adds the Dock stack (macOS-only, idempotent, **manual**)
 
 **Choose which projects appear:**
 ```bash
@@ -232,6 +232,12 @@ Each line is either a **bare repo name** under `~/Projects` (e.g.
 `#` starts a comment. Delete or empty the file to track *every* git repo under
 `~/Projects`.
 
+**Work vs. personal:** this curated list only deploys on `profile: work`
+machines (see `.chezmoiignore`) — on `profile: personal` machines the file is
+never created, so the generator falls back to tracking every git repo under
+`~/Projects` automatically. Edit `.chezmoiignore` if you'd rather curate a
+personal list too.
+
 **What gets generated** (into `~/Projects/_workspaces/`):
 - `all-repos.code-workspace` — every tracked project as one root (open all).
 - `<name>.code-workspace` — one per tracked project, so each appears
@@ -240,13 +246,20 @@ Each line is either a **bare repo name** under `~/Projects` (e.g.
 
 Both files seed `workbench.sideBar.location: left` and stale entries are pruned.
 
-**The Dock stack** is set up automatically by `chezmoi apply` on macOS: a
-**Projects** stack pointing at `~/Projects/_workspaces/` (list view, sorted by
-name), shown with the **VS Code logo**. Click it → pick a workspace → it opens
-in VSCode. It also points `.code-workspace` files at VS Code (via an
-extension-based LaunchServices handler — `duti` can't, since these files have
-only a dynamic UTI). The step is idempotent (re-running never duplicates it) and
-a no-op on Linux. To remove the stack, drag it off the Dock.
+**The Dock stack is opt-in, not automatic.** `chezmoi apply` never touches your
+Dock or LaunchServices handlers by itself — run it yourself whenever you want
+the stack installed (macOS only; it refuses to run on Linux):
+```bash
+setup-projects-dock
+```
+It adds a **Projects** stack pointing at `~/Projects/_workspaces/` (list view,
+sorted by name, shown with the **VS Code logo**) and points `.code-workspace`
+files at VS Code (via an extension-based LaunchServices handler — `duti` can't,
+since these files have only a dynamic UTI). It's idempotent — re-running never
+duplicates the stack. A one-time reminder to run it prints after your first
+`chezmoi init --apply` on a new macOS machine (see
+`run_once_after_print-manual-setup-notes.sh.tmpl`); it never runs it for you.
+To remove the stack, drag it off the Dock.
 
 **Stays current automatically:** the `wt` worktree helper reruns the generator
 on `wt create` / `checkout` / `remove`, so worktree changes appear in the stack

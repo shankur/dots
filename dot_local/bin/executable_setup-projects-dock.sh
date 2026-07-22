@@ -1,9 +1,15 @@
 #!/bin/bash
 # Add a curated "Projects" stack to the macOS Dock (pointing at the generated
 # VSCode workspaces in ~/Projects/_workspaces/) and make .code-workspace files
-# open in VS Code. Idempotent and macOS-only.
+# open in VS Code. Idempotent, macOS-only. Manual — not wired into
+# `chezmoi apply`; re-run any time you want to (re)install the stack.
 set -euo pipefail
-{{ if eq .chezmoi.os "darwin" -}}
+
+if [[ "$(uname)" != "Darwin" ]]; then
+    echo "setup-projects-dock: macOS only, nothing to do here." >&2
+    exit 1
+fi
+
 WS_DIR="$HOME/Projects/_workspaces"
 GEN="$HOME/.local/bin/gen-projects-workspace"
 LSREG=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
@@ -75,6 +81,3 @@ if [ -d "/Applications/Visual Studio Code.app" ]; then
         echo "Set .code-workspace to open in VS Code."
     fi
 fi
-{{- else -}}
-exit 0
-{{- end -}}

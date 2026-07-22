@@ -1,5 +1,4 @@
 # Ghostty Configuration
-# For bottom-up prompt behavior
 
 # Terminal behavior
 cursor-style = block
@@ -17,10 +16,7 @@ font-family = "JetBrainsMono Nerd Font"
 font-size = 14
 
 # Theme (to match your Catppuccin setup)
-theme = Catppuccin Mocha
+theme = catppuccin-mocha
 
 # Key bindings - ensure TAB works for completion
 keybind = tab=text:\t
-
-# For bottom-up behavior, we'll use a shell-level solution
-# This config prepares the terminal for optimal display

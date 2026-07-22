@@ -3,6 +3,9 @@
 #   - a bare repo name under ~/Projects   (e.g. cortex-code-eval), or
 #   - an explicit path                    (e.g. ~/.local/share/chezmoi)
 # Delete or empty this file to track every git repo found under ~/Projects.
+#
+# work profile only — .chezmoiignore skips deploying this file entirely on
+# personal machines, so they auto-track every repo under ~/Projects instead.
 cortex-code-eval
 cortex-code-skills
 dev-config

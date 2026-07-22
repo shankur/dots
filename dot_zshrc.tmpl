@@ -1,14 +1,15 @@
-# History deduplication
+# ── History ──────────────────────────────────────────────────────────────
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_SAVE_NO_DUPS
 setopt HIST_FIND_NO_DUPS
 
 {{ if eq .chezmoi.os "darwin" -}}
-# Homebrew (PATH set in .zshenv; this loads completions/env vars for interactive shells)
+# ── Homebrew ─────────────────────────────────────────────────────────────
+# PATH is set in .zshenv; this loads completions/env vars for interactive shells.
 eval "$(/opt/homebrew/bin/brew shellenv)"
 {{ end -}}
 
-# Fall back to xterm-256color if the terminal type is not known to this system
+# Fall back to xterm-256color if the terminal type is unknown to this system
 if [[ -n "$TERM" ]] && ! infocmp "$TERM" &>/dev/null 2>&1; then
     export TERM=xterm-256color
 fi
@@ -18,21 +19,19 @@ for f in ~/.awscredentials ~/.jenkinstoken ~/.atlassian ~/.snowflaketoken ~/.ght
     [ -f "$f" ] && source "$f"
 done
 
-# fzf completion must be loaded before compinit
+# ── Completion ───────────────────────────────────────────────────────────
+# fzf completion must load before compinit
 {{- if eq .chezmoi.os "darwin" }}
 [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 {{- else }}
 [ -f ~/.config/fzf/completion.zsh ] && source ~/.config/fzf/completion.zsh
 {{- end }}
 
-# Add custom completions to fpath before compinit
 fpath=(~/.zsh/completions $fpath)
 
-# Initialize completion system
 autoload -Uz compinit
 compinit
 
-# Configure completion system
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
@@ -41,47 +40,90 @@ zstyle ':completion:*:descriptions' format '%B%d%b'
 zstyle ':completion:*' completer _complete _match _approximate
 zstyle ':completion:*:match:*' original only
 zstyle ':completion:*:approximate:*' max-errors 1 numeric
-
-# Enable completion caching
 zstyle ':completion:*' use-cache yes
 zstyle ':completion:*' cache-path ~/.zsh/cache
 
-# Bottom-up prompt setup
-# Add some space to push prompt towards bottom
-export PROMPT_EOL_MARK=""
+# fzf-tab: replace the completion menu with fzf (after compinit, before other plugins)
+[ -f ~/.config/fzf-tab/fzf-tab.plugin.zsh ] && source ~/.config/fzf-tab/fzf-tab.plugin.zsh
 
-# Function to add padding and keep prompt at bottom
-bottom_up_padding() {
-    local terminal_height=$(tput lines)
-    local content_height=10  # Adjust based on your preference
-    local padding=$((terminal_height - content_height))
+# zsh-autosuggestions / zsh-syntax-highlighting, if installed
+{{- if eq .chezmoi.os "darwin" }}
+[[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \
+    source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
+    source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+{{- else }}
+for f in \
+    ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh \
+    /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+    /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+; do
+    [[ -f "$f" ]] && { source "$f"; break }
+done
+for f in \
+    ~/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+    /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+    /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+; do
+    [[ -f "$f" ]] && { source "$f"; break }
+done
+{{- end }}
 
-    if [ $padding -gt 0 ]; then
-        printf '\n%.0s' $(seq 1 $padding)
-    fi
-}
+# git-extras completions
+{{- if eq .chezmoi.os "darwin" }}
+[[ -f /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh ]] && \
+    source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
+{{- else }}
+for f in /usr/share/git-extras/git-extras-completion.zsh /usr/local/share/git-extras/git-extras-completion.zsh; do
+    [[ -f "$f" ]] && { source "$f"; break }
+done
+{{- end }}
 
-# Alternative: Manual bottom-up command
-alias bottom='clear; printf "\n%.0s" $(seq 1 $(($(tput lines) - 5)))'
+{{- if ne .chezmoi.os "darwin" }}
+# fzf key bindings (completion was already sourced above, before compinit)
+[ -f ~/.config/fzf/key-bindings.zsh ] && source ~/.config/fzf/key-bindings.zsh
+{{- end }}
 
-# Function to start a bottom-up session
-start_bottom_up() {
-    clear
-    printf '\n%.0s' $(seq 1 $(($(tput lines) - 10)))
-    echo "🚀 Bottom-up mode activated! Type 'bottom' to reset position."
-}
+bindkey '^I' expand-or-complete
+bindkey '^[[Z' reverse-menu-complete
+bindkey '^?' backward-delete-char
+bindkey '^H' backward-delete-char
+bindkey '^L' clear-screen
 
-# Split-screen prompt sessions
-alias split='split-prompt'
-alias sp='split-prompt'
-alias asplit='advanced-split'
-alias as='advanced-split'
-
-# Editor shortcuts
+# ── Aliases & tools ──────────────────────────────────────────────────────
 alias n='nvim'
 alias v='nvim'
 alias vim='nvim'
 
+setopt COMPLETE_ALIASES
+alias ls='eza --color=always --group-directories-first --icons'
+alias ll='eza -l --color=always --group-directories-first --icons'
+alias la='eza -la --color=always --group-directories-first --icons'
+alias lt='eza -T --color=always --group-directories-first --icons'
+alias l.='eza -a | command grep -E "^\."'
+command -v fd &>/dev/null && alias find='fd'
+command -v fdfind &>/dev/null && alias find='fdfind'
+alias grep='rg'
+
+if command -v zoxide &> /dev/null; then
+    export _ZO_DOCTOR=0
+    eval "$(zoxide init zsh --cmd cd)"
+    alias z='cd'
+fi
+
+if command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+fi
+
+export DISABLE_AUTOUPDATER=1
+
+# Report working directory to the terminal via OSC 7 (new tab/split opens in the same dir)
+autoload -Uz add-zsh-hook
+__osc7_cwd() {
+    printf '\e]7;file://%s%s\e\\' "$HOST" "${PWD// /%20}"
+}
+add-zsh-hook chpwd __osc7_cwd
+__osc7_cwd
 
 # Sync AI knowledge repos (ai-history + claude-kb)
 sync-ai() {
@@ -106,141 +148,7 @@ sync-ai() {
     return $failed
 }
 
-# Modern CLI Tools
-alias ls='eza --color=always --group-directories-first --icons'
-# Complete aliases as their target command
-setopt COMPLETE_ALIASES
-alias ll='eza -l --color=always --group-directories-first --icons'
-alias la='eza -la --color=always --group-directories-first --icons'
-alias lt='eza -T --color=always --group-directories-first --icons'
-alias l.='eza -a | command grep -E "^\."'
-command -v fd &>/dev/null && alias find='fd'
-command -v fdfind &>/dev/null && alias find='fdfind'
-alias grep='rg'
-# zoxide: handled by zoxide init below
-
-# C++ Compiler Default Flags
-export CXXFLAGS="-std=c++23 -Wall -Wextra -O2 -g"
-export CFLAGS="-Wall -Wextra -O2 -g"
-export LDFLAGS=""  # Add linker flags here if needed
-
-{{- /* Cross-platform GCC configuration */ -}}
-{{- if eq .chezmoi.os "darwin" }}
-# macOS: Use Homebrew GCC 15
-alias gpp='g++-15 -std=c++23 -Wall -Wextra -O2 -g'
-alias c++23='g++-15 -std=c++23 -Wall -Wextra -O2 -g'
-export CXX='g++-15'
-export CC='gcc-15'
-alias g++debug='g++-15 -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
-alias g++release='g++-15 -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
-alias g++fast='g++-15 -std=c++23 -O3 -march=native'
-alias gccbuild='gcc-15 -std=c2x -Wall -Wextra -O2 -g'
-alias gccdebug='gcc-15 -std=c2x -Wall -Wextra -g -O0 -DDEBUG'
-alias gccfast='gcc-15 -std=c2x -O3 -march=native'
-alias gcc15='gcc-15'
-alias gpp15='g++-15'
-{{- else }}
-# Linux: Use system GCC (or installed GCC)
-alias gpp='g++ -std=c++23 -Wall -Wextra -O2 -g'
-alias c++23='g++ -std=c++23 -Wall -Wextra -O2 -g'
-export CXX='g++'
-export CC='gcc'
-alias g++debug='g++ -std=c++23 -Wall -Wextra -g -O0 -DDEBUG'
-alias g++release='g++ -std=c++23 -Wall -Wextra -O3 -DNDEBUG'
-alias g++fast='g++ -std=c++23 -O3 -march=native'
-alias gccbuild='gcc -std=c2x -Wall -Wextra -O2 -g'
-alias gccdebug='gcc -std=c2x -Wall -Wextra -g -O0 -DDEBUG'
-alias gccfast='gcc -std=c2x -O3 -march=native'
-alias gcc15='gcc'
-alias gpp15='g++'
-{{- end }}
-
-# Custom completion will be set up after fzf loads
-
-# Basic completion setup (bypassing zplug for now)
-
-{{/* Cross-platform zsh plugins */}}
-# fzf-tab: replace zsh completion menu with fzf (must be after compinit, before other plugins)
-[ -f ~/.config/fzf-tab/fzf-tab.plugin.zsh ] && source ~/.config/fzf-tab/fzf-tab.plugin.zsh
-
-# Basic autosuggestions and syntax highlighting (if available)
-{{- if eq .chezmoi.os "darwin" }}
-if [[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-fi
-if [[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
-{{- else }}
-if [[ -f ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source ~/.nix-profile/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-elif [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-elif [[ -f /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-  source /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-fi
-if [[ -f ~/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-  source ~/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-elif [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-elif [[ -f /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-  source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
-{{- end }}
-
-# Ensure TAB completion works properly
-bindkey '^I' expand-or-complete
-bindkey '^[[Z' reverse-menu-complete
-bindkey '^?' backward-delete-char
-bindkey '^H' backward-delete-char
-bindkey '^L' clear-screen
-
-# Zoxide - Smart directory jumping (replaces cd command, also available as z)
-if command -v zoxide &> /dev/null; then
-    export _ZO_DOCTOR=0
-    eval "$(zoxide init zsh --cmd cd)"
-    alias z='cd'
-fi
-
-{{- /* Git-extras completions - cross-platform */ -}}
-{{- if eq .chezmoi.os "darwin" }}
-# macOS: Homebrew git-extras
-if [[ -f /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh ]]; then
-  source /opt/homebrew/opt/git-extras/share/git-extras/git-extras-completion.zsh
-fi
-{{- else }}
-# Linux: Try common locations for git-extras
-if [[ -f /usr/share/git-extras/git-extras-completion.zsh ]]; then
-  source /usr/share/git-extras/git-extras-completion.zsh
-elif [[ -f /usr/local/share/git-extras/git-extras-completion.zsh ]]; then
-  source /usr/local/share/git-extras/git-extras-completion.zsh
-fi
-{{- end }}
-
-# fzf key bindings (completion already sourced above before compinit)
-{{- if ne .chezmoi.os "darwin" }}
-[ -f ~/.config/fzf/key-bindings.zsh ] && source ~/.config/fzf/key-bindings.zsh
-{{- end }}
-
-# Report working directory to terminal via OSC 7 (enables new tab/split in same dir)
-autoload -Uz add-zsh-hook
-__osc7_cwd() {
-    printf '\e]7;file://%s%s\e\\' "$HOST" "${PWD// /%20}"
-}
-add-zsh-hook chpwd __osc7_cwd
-__osc7_cwd  # report initial directory
-
-# Starship Prompt
-if command -v starship &> /dev/null; then
-    eval "$(starship init zsh)"
-fi
-
-# Note: Tab completion shows some extra entries like 'file' command
-# This is normal behavior with enhanced completion systems (fzf, zoxide, etc.)
-
-export DISABLE_AUTOUPDATER=1
-
-# Zellij
+# ── Zellij ───────────────────────────────────────────────────────────────
 alias zj="zellij"
 compdef _zellij zj 2>/dev/null
 if command -v zellij &>/dev/null; then
@@ -249,8 +157,8 @@ if command -v zellij &>/dev/null; then
     fpath=(~/.zsh/completions $fpath)
 fi
 
-# Inside zellij: make 'exit' detach instead of killing the session
 if [[ -n "$ZELLIJ" ]]; then
+    # Inside zellij: make 'exit' detach instead of killing the session
     alias exit='zellij action detach'
     # Block SSH from within Zellij to prevent nested sessions
     ssh() { echo "Detach from Zellij first (exit) before using SSH."; return 1; }
@@ -258,8 +166,8 @@ fi
 
 {{- if eq .profile "work" }}
 
+# ── Work (Snowflake) ─────────────────────────────────────────────────────
 eval "$(sf aliases)"
-alias claude='claude --dangerously-skip-permissions'
 
 # Refresh the forwarded GitHub ssh-agent on a Snowflake cloud workspace.
 # The sfcli ssh config forwards $SSH_AUTH_SOCK to /dev/shm/ssh-agent-$USER.sock
@@ -281,22 +189,6 @@ gh-agent-refresh() {
   }
   ssh "$host" -- 'zsh -lc "sf auth check"' 2>&1 | grep -i github
 }
-{{ end -}}
-{{ if eq .chezmoi.os "darwin" }}
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/opt/homebrew/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" ]; then
-        . "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh"
-    else
-        export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
 {{ end }}
 
 # Added by sf setup

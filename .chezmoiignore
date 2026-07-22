@@ -9,6 +9,13 @@
 Library/Application Support/Code/**
 {{- end }}
 
+{{- if eq .profile "personal" }}
+# Personal machines skip the curated projects list entirely — gen-projects-workspace
+# falls back to tracking every git repo it finds under ~/Projects when this is absent,
+# which is exactly what we want without needing to keep a personal list in sync.
+.config/projects-workspace/repos
+{{- end }}
+
 # codex: manage only AGENTS.md — never runtime state, machine/Koi-managed config, or secrets
 .codex/*.sqlite*
 .codex/sessions

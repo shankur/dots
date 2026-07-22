@@ -1,0 +1,9 @@
+#!/bin/bash
+# One-time reminder (fires once, right after the initial `chezmoi init --apply`
+# on a new machine) about optional setup steps that are intentionally manual —
+# never run automatically by chezmoi.
+set -e
+
+{{ if eq .chezmoi.os "darwin" -}}
+echo "  → Optional: run 'setup-projects-dock' to add the Projects stack to your macOS Dock."
+{{- end }}
